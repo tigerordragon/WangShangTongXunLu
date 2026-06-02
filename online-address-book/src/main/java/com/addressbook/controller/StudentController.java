@@ -1,0 +1,59 @@
+package com.addressbook.controller;
+
+import com.addressbook.dto.LoginInfoResponse;
+import com.addressbook.dto.MessageResponse;
+import com.addressbook.service.LoginInfo;
+import com.addressbook.service.StudentLoginService;
+import com.addressbook.service.auth.AccessTokenClaims;
+import com.addressbook.service.auth.AuthTokenService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.time.Instant;
+import java.util.Optional;
+
+/** 处理学生个人信息相关接口。 */
+@RestController
+@RequestMapping("/students")
+public class StudentController {
+    private final StudentLoginService loginService;
+    private final AuthTokenService tokenService;
+
+    /** 创建学生控制器。 */
+    public StudentController(StudentLoginService loginService, AuthTokenService tokenService) {
+        this.loginService = loginService;
+        this.tokenService = tokenService;
+    }
+
+    /** 查询当前学生的登录信息。 */
+    @GetMapping("/me/login-info")
+    public ResponseEntity<?> loginInfo(@RequestHeader(value = "Authorization", required = false) String authorization) {
+        Optional<AccessTokenClaims> claims = tokenService.verifyAccessToken(extractBearerToken(authorization));
+        if (!claims.isPresent()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(false, "访问 token 无效"));
+        }
+        Optional<LoginInfo> loginInfo = loginService.getLoginInfo(claims.get().getStudentId());
+        if (!loginInfo.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(false, "学生不存在"));
+        }
+        LoginInfo info = loginInfo.get();
+        return ResponseEntity.ok(new LoginInfoResponse(info.getLoginCount(), formatInstant(info.getLastLoginTime())));
+    }
+
+    /** 从请求头提取 Bearer token。 */
+    private String extractBearerToken(String authorization) {
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            return null;
+        }
+        return authorization.substring("Bearer ".length());
+    }
+
+    /** 格式化时间给前端展示。 */
+    private String formatInstant(Instant instant) {
+        return instant == null ? "" : instant.toString();
+    }
+}

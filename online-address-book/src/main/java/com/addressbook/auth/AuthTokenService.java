@@ -1,4 +1,4 @@
-package com.example.auth;
+package com.addressbook.auth;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;

@@ -1,4 +1,4 @@
-package com.example.auth;
+package com.addressbook.auth;
 
 /** 登录成功后返回给前端的双 token。 */
 public class AuthTokenPair {

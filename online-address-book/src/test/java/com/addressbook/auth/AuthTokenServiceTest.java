@@ -1,4 +1,4 @@
-package com.example.auth;
+package com.addressbook.auth;
 
 import org.junit.Test;
 

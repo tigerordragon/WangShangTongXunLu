@@ -4,6 +4,7 @@ import com.addressbook.entity.AuditStatus;
 import com.addressbook.entity.Student;
 import com.addressbook.repository.InMemoryRefreshTokenStore;
 import com.addressbook.repository.InMemoryStudentRepository;
+import com.addressbook.service.StudentContactService;
 import com.addressbook.service.StudentLoginService;
 import com.addressbook.service.auth.AuthTokenService;
 import org.junit.Test;
@@ -95,13 +96,15 @@ public class StudentAuthControllerTest {
 
     private MockMvc createMockMvc() {
         InMemoryStudentRepository studentRepository = new InMemoryStudentRepository();
-        studentRepository.save(new Student(1L, "student-a", "123456", AuditStatus.APPROVED, 0, null));
+        studentRepository.save(new Student(1L, "student-a", "123456", AuditStatus.APPROVED, 0, null,
+                "计算机科学", "一班", 2022, "A公司", "杭州", "13800000000", "student-a@example.com"));
         InMemoryRefreshTokenStore tokenStore = new InMemoryRefreshTokenStore();
         AuthTokenService tokenService = new AuthTokenService("test-secret", tokenStore, clock);
         StudentLoginService loginService = new StudentLoginService(studentRepository, tokenService, clock);
+        StudentContactService contactService = new StudentContactService(studentRepository);
         return MockMvcBuilders.standaloneSetup(
                 new StudentAuthController(loginService, tokenService),
-                new StudentController(loginService, tokenService)
+                new StudentController(loginService, contactService, tokenService)
         ).build();
     }
 

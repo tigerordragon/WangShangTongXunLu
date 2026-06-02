@@ -8,11 +8,16 @@
     xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd">
   <display-name>Online Address Book</display-name>
   <servlet>
-    <servlet-name>StudentAuthServlet</servlet-name>
-    <servlet-class>com.addressbook.web.StudentAuthServlet</servlet-class>
+    <servlet-name>springMvc</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <init-param>
+      <param-name>contextConfigLocation</param-name>
+      <param-value>classpath:spring-mvc.xml</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
   </servlet>
   <servlet-mapping>
-    <servlet-name>StudentAuthServlet</servlet-name>
-    <url-pattern>/auth/*</url-pattern>
+    <servlet-name>springMvc</servlet-name>
+    <url-pattern>/api/*</url-pattern>
   </servlet-mapping>
 </web-app>

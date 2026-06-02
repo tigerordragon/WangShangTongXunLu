@@ -7,4 +7,12 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd">
   <display-name>Online Address Book</display-name>
+  <servlet>
+    <servlet-name>StudentAuthServlet</servlet-name>
+    <servlet-class>com.addressbook.web.StudentAuthServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>StudentAuthServlet</servlet-name>
+    <url-pattern>/auth/*</url-pattern>
+  </servlet-mapping>
 </web-app>

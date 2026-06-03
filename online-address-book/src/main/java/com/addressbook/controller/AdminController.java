@@ -1,7 +1,6 @@
 package com.addressbook.controller;
 
 import com.addressbook.dto.AdminStudentListResponse;
-import com.addressbook.dto.AdminStudentResponse;
 import com.addressbook.dto.MessageResponse;
 import com.addressbook.dto.ProfessionalListResponse;
 import com.addressbook.dto.ProfessionalRequest;
@@ -18,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 处理管理员账户和专业维护接口。 */
+/** 处理管理员账号和专业维护接口。 */
 @RestController
 @RequestMapping("/admin")
 public class AdminController {
@@ -31,47 +30,50 @@ public class AdminController {
         this.professionalService = professionalService;
     }
 
-    /** 查询待删除账户。 */
-    @GetMapping("/students/pending")
-    public AdminStudentListResponse pendingStudents() {
-        return new AdminStudentListResponse(true, adminStudentService.listPendingAccounts());
+    /** 查询未通过审核账号。 */
+    @GetMapping("/students/unapproved")
+    public AdminStudentListResponse unapprovedStudents() {
+        return new AdminStudentListResponse(true, adminStudentService.listUnapprovedAccounts());
     }
 
-    /** 查询已通过审核账户。 */
+    /** 查询已通过审核账号。 */
     @GetMapping("/students/approved")
     public AdminStudentListResponse approvedStudents() {
         return new AdminStudentListResponse(true, adminStudentService.listApprovedAccounts());
     }
 
-    /** 查询已禁用账户。 */
+    /** 查询已禁用账号。 */
     @GetMapping("/students/disabled")
     public AdminStudentListResponse disabledStudents() {
         return new AdminStudentListResponse(true, adminStudentService.listDisabledAccounts());
     }
 
-    /** 删除未通过审核账户。 */
+    /** 删除未通过审核账号。 */
     @DeleteMapping("/students/{id}")
     public ResponseEntity<MessageResponse> deleteStudent(@PathVariable Long id) {
         if (!adminStudentService.deleteUnapprovedAccount(id)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(false, "仅允许删除未通过审核的账户"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new MessageResponse(false, "仅允许删除未通过审核的账户"));
         }
         return ResponseEntity.ok(new MessageResponse(true, "删除成功"));
     }
 
-    /** 禁用已通过审核账户。 */
+    /** 禁用已通过审核账号。 */
     @PostMapping("/students/{id}/disable")
     public ResponseEntity<MessageResponse> disableStudent(@PathVariable Long id) {
         if (!adminStudentService.disableApprovedAccount(id)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(false, "仅允许禁用已通过审核的账户"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new MessageResponse(false, "仅允许禁用已通过审核的账户"));
         }
         return ResponseEntity.ok(new MessageResponse(true, "禁用成功"));
     }
 
-    /** 启用已禁用账户。 */
+    /** 启用已禁用账号。 */
     @PostMapping("/students/{id}/enable")
     public ResponseEntity<MessageResponse> enableStudent(@PathVariable Long id) {
         if (!adminStudentService.enableDisabledAccount(id)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(false, "仅允许启用已禁用的账户"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new MessageResponse(false, "仅允许启用已禁用的账户"));
         }
         return ResponseEntity.ok(new MessageResponse(true, "启用成功"));
     }
@@ -86,7 +88,8 @@ public class AdminController {
     @PostMapping("/professionals")
     public ResponseEntity<MessageResponse> createProfessional(@RequestBody ProfessionalRequest request) {
         if (!professionalService.create(request.getName())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(false, "专业名称不能为空或重复"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new MessageResponse(false, "专业名称不能为空或重复"));
         }
         return ResponseEntity.ok(new MessageResponse(true, "新增成功"));
     }
@@ -95,7 +98,8 @@ public class AdminController {
     @PutMapping("/professionals/{id}")
     public ResponseEntity<MessageResponse> updateProfessional(@PathVariable Long id, @RequestBody ProfessionalRequest request) {
         if (!professionalService.update(id, request.getName())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(false, "专业无法修改"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new MessageResponse(false, "专业无法修改"));
         }
         return ResponseEntity.ok(new MessageResponse(true, "修改成功"));
     }
@@ -104,7 +108,8 @@ public class AdminController {
     @DeleteMapping("/professionals/{id}")
     public ResponseEntity<MessageResponse> deleteProfessional(@PathVariable Long id) {
         if (!professionalService.delete(id)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(false, "专业正在被学生使用或不存在"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new MessageResponse(false, "专业正在被学生使用或不存在"));
         }
         return ResponseEntity.ok(new MessageResponse(true, "删除成功"));
     }

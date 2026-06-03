@@ -20,20 +20,20 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Instant;
 import java.util.Optional;
 
-/** 处理学生登录、刷新 token 和退出登录。 */
+/** 处理学生登录、刷新 token 和退出登录。*/
 @RestController
 @RequestMapping("/auth")
 public class StudentAuthController {
     private final StudentLoginService loginService;
     private final AuthTokenService tokenService;
 
-    /** 创建学生认证控制器。 */
+    /** 创建认证控制器。*/
     public StudentAuthController(StudentLoginService loginService, AuthTokenService tokenService) {
         this.loginService = loginService;
         this.tokenService = tokenService;
     }
 
-    /** 处理学生登录请求。 */
+    /** 处理登录请求。*/
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         LoginResult result = loginService.login(request.getUsername(), request.getPassword());
@@ -42,6 +42,9 @@ public class StudentAuthController {
         }
         if (result.getStatus() == LoginStatus.NOT_APPROVED) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(false, "账号未通过审核"));
+        }
+        if (result.getStatus() == LoginStatus.DISABLED) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(false, "账号已被禁用"));
         }
         AuthTokenPair tokenPair = result.getTokenPair();
         return ResponseEntity.ok(new LoginResponse(
@@ -53,7 +56,7 @@ public class StudentAuthController {
         ));
     }
 
-    /** 处理访问 token 续期请求。 */
+    /** 处理刷新 token 请求。*/
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest request) {
         Optional<String> accessToken = tokenService.refreshAccessToken(request.getRefreshToken());
@@ -63,14 +66,14 @@ public class StudentAuthController {
         return ResponseEntity.ok(new AccessTokenResponse(true, accessToken.get()));
     }
 
-    /** 处理退出登录请求。 */
+    /** 处理退出登录请求。*/
     @PostMapping("/logout")
     public ResponseEntity<MessageResponse> logout(@RequestBody RefreshTokenRequest request) {
         tokenService.revokeRefreshToken(request.getRefreshToken());
         return ResponseEntity.ok(new MessageResponse(true, "退出成功"));
     }
 
-    /** 格式化时间给前端展示。 */
+    /** 格式化时间给前端展示。*/
     private String formatInstant(Instant instant) {
         return instant == null ? "" : instant.toString();
     }

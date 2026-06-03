@@ -7,6 +7,8 @@ import com.addressbook.dto.StudentContactResponse;
 import com.addressbook.dto.StudentProfileRequest;
 import com.addressbook.dto.StudentProfileResponse;
 import com.addressbook.service.LoginInfo;
+import com.addressbook.service.ProfileSaveResult;
+import com.addressbook.service.ProfileSaveStatus;
 import com.addressbook.service.StudentContactService;
 import com.addressbook.service.StudentLoginService;
 import com.addressbook.service.StudentProfileService;
@@ -81,20 +83,14 @@ public class StudentController {
         if (!claims.isPresent()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(false, "访问 token 无效"));
         }
-        Optional<StudentProfileResponse> saved = profileService.saveProfile(
-                claims.get().getStudentId(),
-                request.getMajor(),
-                request.getClassName(),
-                request.getEnrollmentYear(),
-                request.getJobUnit(),
-                request.getCity(),
-                request.getContactMethod(),
-                request.getEmail()
-        );
-        if (!saved.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(false, "学生不存在"));
+        ProfileSaveResult result = profileService.saveProfile(claims.get().getStudentId(), request);
+        if (result.getStatus() == ProfileSaveStatus.STUDENT_NOT_FOUND) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(false, result.getMessage()));
         }
-        return ResponseEntity.ok(saved.get());
+        if (result.getStatus() != ProfileSaveStatus.SUCCESS) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(false, result.getMessage()));
+        }
+        return ResponseEntity.ok(result.getProfile());
     }
 
     /** 查询其他同学的通讯录信息。*/

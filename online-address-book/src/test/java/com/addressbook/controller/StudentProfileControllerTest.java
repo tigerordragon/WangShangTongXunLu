@@ -82,6 +82,19 @@ public class StudentProfileControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    public void saveMyContactRejectsInvalidEmail() throws Exception {
+        MockMvc mockMvc = createMockMvc();
+        String accessToken = extractJsonValue(login(mockMvc), "accessToken");
+
+        mockMvc.perform(put("/students/me/contact")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"major\":\"计算机科学\",\"className\":\"一班\",\"enrollmentYear\":2022,"
+                                + "\"email\":\"invalid-email\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
     private String login(MockMvc mockMvc) throws Exception {
         return mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -21,68 +21,65 @@ import java.time.ZoneOffset;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-public class StudentAuthControllerTest {
+public class StudentProfileControllerTest {
     private final Clock clock = Clock.fixed(Instant.parse("2026-06-02T12:00:00Z"), ZoneOffset.UTC);
 
     @Test
-    public void loginReturnsTokenPairForApprovedStudent() throws Exception {
-        MockMvc mockMvc = createMockMvc();
-
-        MvcResult result = mockMvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"student-a\",\"password\":\"123456\"}"))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        String body = result.getResponse().getContentAsString();
-        assertTrue(body.contains("\"accessToken\""));
-        assertTrue(body.contains("\"refreshToken\""));
-        assertTrue(body.contains("\"loginCount\":1"));
-    }
-
-    @Test
-    public void refreshReturnsNewAccessTokenForValidRefreshToken() throws Exception {
-        MockMvc mockMvc = createMockMvc();
-        String refreshToken = extractJsonValue(login(mockMvc), "refreshToken");
-
-        MvcResult result = mockMvc.perform(post("/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        assertTrue(result.getResponse().getContentAsString().contains("\"accessToken\""));
-    }
-
-    @Test
-    public void logoutRevokesRefreshToken() throws Exception {
-        MockMvc mockMvc = createMockMvc();
-        String refreshToken = extractJsonValue(login(mockMvc), "refreshToken");
-        String requestBody = "{\"refreshToken\":\"" + refreshToken + "\"}";
-
-        mockMvc.perform(post("/auth/logout")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isOk());
-        mockMvc.perform(post("/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    public void loginInfoReturnsCurrentStudentInfoWithAccessToken() throws Exception {
+    public void myContactReturnsSavedProfileForAuthenticatedStudent() throws Exception {
         MockMvc mockMvc = createMockMvc();
         String accessToken = extractJsonValue(login(mockMvc), "accessToken");
 
-        MvcResult result = mockMvc.perform(get("/students/me/login-info")
+        MvcResult result = mockMvc.perform(get("/students/me/contact")
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        assertTrue(result.getResponse().getContentAsString().contains("\"loginCount\":1"));
+        String body = result.getResponse().getContentAsString();
+        assertTrue(body.contains("\"enrollmentYear\":2022"));
+        assertTrue(body.contains("\"email\":\"student-a@example.com\""));
+        assertTrue(body.contains("\"contactMethod\":\"13800000000\""));
+    }
+
+    @Test
+    public void saveMyContactUpdatesProfileAndCanBeReadBack() throws Exception {
+        MockMvc mockMvc = createMockMvc();
+        String accessToken = extractJsonValue(login(mockMvc), "accessToken");
+        String requestBody = "{"
+                + "\"major\":\"软件工程\","
+                + "\"className\":\"二班\","
+                + "\"enrollmentYear\":2023,"
+                + "\"jobUnit\":\"新公司\","
+                + "\"city\":\"上海\","
+                + "\"contactMethod\":\"13900000000\","
+                + "\"email\":\"new@example.com\""
+                + "}";
+
+        mockMvc.perform(put("/students/me/contact")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk());
+
+        MvcResult result = mockMvc.perform(get("/students/me/contact")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String body = result.getResponse().getContentAsString();
+        assertTrue(body.contains("\"enrollmentYear\":2023"));
+        assertTrue(body.contains("\"email\":\"new@example.com\""));
+        assertTrue(body.contains("\"contactMethod\":\"13900000000\""));
+    }
+
+    @Test
+    public void myContactRejectsMissingToken() throws Exception {
+        MockMvc mockMvc = createMockMvc();
+
+        mockMvc.perform(get("/students/me/contact"))
+                .andExpect(status().isUnauthorized());
     }
 
     private String login(MockMvc mockMvc) throws Exception {

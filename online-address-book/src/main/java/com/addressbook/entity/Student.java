@@ -117,4 +117,11 @@ public class Student {
         return new Student(id, username, password, auditStatus, loginCount + 1, loginTime,
                 major, className, enrollmentYear, jobUnit, city, contactMethod, email);
     }
+
+    /** 返回更新通讯录信息后的学生对象。*/
+    public Student updateContact(String major, String className, Integer enrollmentYear,
+                               String jobUnit, String city, String contactMethod, String email) {
+        return new Student(id, username, password, auditStatus, loginCount, lastLoginTime,
+                major, className, enrollmentYear, jobUnit, city, contactMethod, email);
+    }
 }

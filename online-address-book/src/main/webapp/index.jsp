@@ -1,6 +1,7 @@
 <html>
 <body>
 <h2>Online Address Book</h2>
+<p><a href="profile.jsp">我的通讯录</a></p>
 <form id="loginForm">
   <p>
     <label>Username</label>

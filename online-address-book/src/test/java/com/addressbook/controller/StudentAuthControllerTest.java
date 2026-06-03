@@ -6,6 +6,7 @@ import com.addressbook.repository.InMemoryRefreshTokenStore;
 import com.addressbook.repository.InMemoryStudentRepository;
 import com.addressbook.service.StudentContactService;
 import com.addressbook.service.StudentLoginService;
+import com.addressbook.service.StudentProfileService;
 import com.addressbook.service.auth.AuthTokenService;
 import org.junit.Test;
 import org.springframework.http.MediaType;
@@ -126,9 +127,10 @@ public class StudentAuthControllerTest {
         AuthTokenService tokenService = new AuthTokenService("test-secret", tokenStore, clock);
         StudentLoginService loginService = new StudentLoginService(studentRepository, tokenService, clock);
         StudentContactService contactService = new StudentContactService(studentRepository);
+        StudentProfileService profileService = new StudentProfileService(studentRepository);
         return MockMvcBuilders.standaloneSetup(
                 new StudentAuthController(loginService, tokenService),
-                new StudentController(loginService, contactService, tokenService)
+                new StudentController(loginService, contactService, profileService, tokenService)
         ).build();
     }
 

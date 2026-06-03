@@ -4,14 +4,19 @@ import com.addressbook.dto.LoginInfoResponse;
 import com.addressbook.dto.MessageResponse;
 import com.addressbook.dto.StudentContactSearchResponse;
 import com.addressbook.dto.StudentContactResponse;
+import com.addressbook.dto.StudentProfileRequest;
+import com.addressbook.dto.StudentProfileResponse;
 import com.addressbook.service.LoginInfo;
 import com.addressbook.service.StudentContactService;
 import com.addressbook.service.StudentLoginService;
+import com.addressbook.service.StudentProfileService;
 import com.addressbook.service.auth.AccessTokenClaims;
 import com.addressbook.service.auth.AuthTokenService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -27,12 +32,15 @@ import java.util.Optional;
 public class StudentController {
     private final StudentLoginService loginService;
     private final StudentContactService contactService;
+    private final StudentProfileService profileService;
     private final AuthTokenService tokenService;
 
     /** 创建学生控制器。*/
-    public StudentController(StudentLoginService loginService, StudentContactService contactService, AuthTokenService tokenService) {
+    public StudentController(StudentLoginService loginService, StudentContactService contactService,
+                             StudentProfileService profileService, AuthTokenService tokenService) {
         this.loginService = loginService;
         this.contactService = contactService;
+        this.profileService = profileService;
         this.tokenService = tokenService;
     }
 
@@ -49,6 +57,44 @@ public class StudentController {
         }
         LoginInfo info = loginInfo.get();
         return ResponseEntity.ok(new LoginInfoResponse(info.getLoginCount(), formatInstant(info.getLastLoginTime())));
+    }
+
+    /** 查询本人通讯录信息。*/
+    @GetMapping("/me/contact")
+    public ResponseEntity<?> myContact(@RequestHeader(value = "Authorization", required = false) String authorization) {
+        Optional<AccessTokenClaims> claims = tokenService.verifyAccessToken(extractBearerToken(authorization));
+        if (!claims.isPresent()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(false, "访问 token 无效"));
+        }
+        Optional<StudentProfileResponse> profile = profileService.getProfile(claims.get().getStudentId());
+        if (!profile.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(false, "学生不存在"));
+        }
+        return ResponseEntity.ok(profile.get());
+    }
+
+    /** 保存本人通讯录信息。*/
+    @PutMapping("/me/contact")
+    public ResponseEntity<?> saveMyContact(@RequestHeader(value = "Authorization", required = false) String authorization,
+                                           @RequestBody StudentProfileRequest request) {
+        Optional<AccessTokenClaims> claims = tokenService.verifyAccessToken(extractBearerToken(authorization));
+        if (!claims.isPresent()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(false, "访问 token 无效"));
+        }
+        Optional<StudentProfileResponse> saved = profileService.saveProfile(
+                claims.get().getStudentId(),
+                request.getMajor(),
+                request.getClassName(),
+                request.getEnrollmentYear(),
+                request.getJobUnit(),
+                request.getCity(),
+                request.getContactMethod(),
+                request.getEmail()
+        );
+        if (!saved.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(false, "学生不存在"));
+        }
+        return ResponseEntity.ok(saved.get());
     }
 
     /** 查询其他同学的通讯录信息。*/

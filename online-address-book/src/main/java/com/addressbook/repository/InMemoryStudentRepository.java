@@ -4,7 +4,7 @@ import com.addressbook.entity.AuditStatus;
 import com.addressbook.entity.Student;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -42,7 +42,7 @@ public class InMemoryStudentRepository implements StudentRepository {
 
     /** 查询全部学生。 */
     @Override
-    public List<Student> findAll() {
+    public Collection<Student> findAll() {
         return studentsById.values().stream()
                 .sorted((left, right) -> Long.compare(left.getId(), right.getId()))
                 .collect(Collectors.toList());
@@ -50,7 +50,7 @@ public class InMemoryStudentRepository implements StudentRepository {
 
     /** 按审核状态查询学生。 */
     @Override
-    public List<Student> findByAuditStatus(AuditStatus auditStatus) {
+    public Collection<Student> findByAuditStatus(AuditStatus auditStatus) {
         return studentsById.values().stream()
                 .filter(student -> student.getAuditStatus() == auditStatus)
                 .sorted((left, right) -> Long.compare(left.getId(), right.getId()))

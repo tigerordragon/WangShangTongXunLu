@@ -34,11 +34,11 @@ public class StudentController {
     public ResponseEntity<?> loginInfo(@RequestHeader(value = "Authorization", required = false) String authorization) {
         Optional<AccessTokenClaims> claims = tokenService.verifyAccessToken(extractBearerToken(authorization));
         if (!claims.isPresent()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(false, "invalid access token"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(false, "访问 token 无效"));
         }
         Optional<LoginInfo> loginInfo = loginService.getLoginInfo(claims.get().getStudentId());
         if (!loginInfo.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(false, "student not found"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(false, "学生不存在"));
         }
         LoginInfo info = loginInfo.get();
         return ResponseEntity.ok(new LoginInfoResponse(info.getLoginCount(), formatInstant(info.getLastLoginTime())));

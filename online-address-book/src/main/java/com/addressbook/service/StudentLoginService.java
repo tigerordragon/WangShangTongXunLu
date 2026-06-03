@@ -32,6 +32,9 @@ public class StudentLoginService {
             return LoginResult.failure(LoginStatus.INVALID_CREDENTIALS);
         }
         Student student = optionalStudent.get();
+        if (student.getAuditStatus() == AuditStatus.DISABLED) {
+            return LoginResult.failure(LoginStatus.DISABLED);
+        }
         if (student.getAuditStatus() != AuditStatus.APPROVED) {
             return LoginResult.failure(LoginStatus.NOT_APPROVED);
         }

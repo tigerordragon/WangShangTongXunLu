@@ -61,6 +61,12 @@ public class Student {
         return auditStatus;
     }
 
+    /** 返回变更审核状态后的学生对象。*/
+    public Student withAuditStatus(AuditStatus newAuditStatus) {
+        return new Student(id, username, password, newAuditStatus, loginCount, lastLoginTime,
+                major, className, enrollmentYear, jobUnit, city, contactMethod, email);
+    }
+
     /** 返回累计登录次数。*/
     public int getLoginCount() {
         return loginCount;

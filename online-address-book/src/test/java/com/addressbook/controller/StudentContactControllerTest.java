@@ -17,71 +17,42 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-public class StudentAuthControllerTest {
+public class StudentContactControllerTest {
     private final Clock clock = Clock.fixed(Instant.parse("2026-06-02T12:00:00Z"), ZoneOffset.UTC);
 
     @Test
-    public void loginReturnsTokenPairForApprovedStudent() throws Exception {
+    public void contactsReturnsOnlyApprovedOtherStudentsMatchingFilters() throws Exception {
         MockMvc mockMvc = createMockMvc();
+        String accessToken = extractJsonValue(login(mockMvc), "accessToken");
 
-        MvcResult result = mockMvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"student-a\",\"password\":\"123456\"}"))
+        MvcResult result = mockMvc.perform(get("/students/contacts")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("major", "计算机科学")
+                        .param("className", "一班")
+                        .param("enrollmentYear", "2022"))
                 .andExpect(status().isOk())
                 .andReturn();
 
         String body = result.getResponse().getContentAsString();
-        assertTrue(body.contains("\"accessToken\""));
-        assertTrue(body.contains("\"refreshToken\""));
-        assertTrue(body.contains("\"loginCount\":1"));
+        assertTrue(body.contains("\"success\":true"));
+        assertTrue(body.contains("\"username\":\"student-b\""));
+        assertFalse(body.contains("\"username\":\"student-a\""));
+        assertFalse(body.contains("\"username\":\"student-c\""));
+        assertFalse(body.contains("\"username\":\"student-d\""));
     }
 
     @Test
-    public void refreshReturnsNewAccessTokenForValidRefreshToken() throws Exception {
+    public void contactsRejectsMissingToken() throws Exception {
         MockMvc mockMvc = createMockMvc();
-        String refreshToken = extractJsonValue(login(mockMvc), "refreshToken");
 
-        MvcResult result = mockMvc.perform(post("/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        assertTrue(result.getResponse().getContentAsString().contains("\"accessToken\""));
-    }
-
-    @Test
-    public void logoutRevokesRefreshToken() throws Exception {
-        MockMvc mockMvc = createMockMvc();
-        String refreshToken = extractJsonValue(login(mockMvc), "refreshToken");
-        String requestBody = "{\"refreshToken\":\"" + refreshToken + "\"}";
-
-        mockMvc.perform(post("/auth/logout")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isOk());
-        mockMvc.perform(post("/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+        mockMvc.perform(get("/students/contacts"))
                 .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    public void loginInfoReturnsCurrentStudentInfoWithAccessToken() throws Exception {
-        MockMvc mockMvc = createMockMvc();
-        String accessToken = extractJsonValue(login(mockMvc), "accessToken");
-
-        MvcResult result = mockMvc.perform(get("/students/me/login-info")
-                        .header("Authorization", "Bearer " + accessToken))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        assertTrue(result.getResponse().getContentAsString().contains("\"loginCount\":1"));
     }
 
     private String login(MockMvc mockMvc) throws Exception {
@@ -98,6 +69,12 @@ public class StudentAuthControllerTest {
         InMemoryStudentRepository studentRepository = new InMemoryStudentRepository();
         studentRepository.save(new Student(1L, "student-a", "123456", AuditStatus.APPROVED, 0, null,
                 "计算机科学", "一班", 2022, "A公司", "杭州", "13800000000", "student-a@example.com"));
+        studentRepository.save(new Student(2L, "student-b", "123456", AuditStatus.APPROVED, 0, null,
+                "计算机科学", "一班", 2022, "B公司", "上海", "13811111111", "student-b@example.com"));
+        studentRepository.save(new Student(3L, "student-c", "123456", AuditStatus.APPROVED, 0, null,
+                "软件工程", "一班", 2022, "C公司", "北京", "13822222222", "student-c@example.com"));
+        studentRepository.save(new Student(4L, "student-d", "123456", AuditStatus.PENDING, 0, null,
+                "计算机科学", "一班", 2022, "D公司", "深圳", "13833333333", "student-d@example.com"));
         InMemoryRefreshTokenStore tokenStore = new InMemoryRefreshTokenStore();
         AuthTokenService tokenService = new AuthTokenService("test-secret", tokenStore, clock);
         StudentLoginService loginService = new StudentLoginService(studentRepository, tokenService, clock);

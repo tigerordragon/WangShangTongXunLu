@@ -44,4 +44,13 @@ public class InMemoryStudentRepository implements StudentRepository {
     public Collection<Student> findAll() {
         return studentsById.values();
     }
+
+    /** 删除学生记录。*/
+    @Override
+    public void deleteById(Long id) {
+        Student removed = studentsById.remove(id);
+        if (removed != null) {
+            studentsByUsername.remove(removed.getUsername());
+        }
+    }
 }

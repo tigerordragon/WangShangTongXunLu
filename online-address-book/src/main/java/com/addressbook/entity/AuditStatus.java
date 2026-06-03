@@ -4,5 +4,6 @@ package com.addressbook.entity;
 public enum AuditStatus {
     PENDING,
     APPROVED,
-    REJECTED
+    REJECTED,
+    DISABLED
 }

@@ -4,5 +4,6 @@ package com.addressbook.service;
 public enum LoginStatus {
     SUCCESS,
     INVALID_CREDENTIALS,
-    NOT_APPROVED
+    NOT_APPROVED,
+    DISABLED
 }

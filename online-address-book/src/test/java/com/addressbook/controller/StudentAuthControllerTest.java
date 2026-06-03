@@ -42,6 +42,16 @@ public class StudentAuthControllerTest {
     }
 
     @Test
+    public void loginRejectsDisabledStudent() throws Exception {
+        MockMvc mockMvc = createMockMvcWithDisabledStudent();
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"student-disabled\",\"password\":\"123456\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     public void refreshReturnsNewAccessTokenForValidRefreshToken() throws Exception {
         MockMvc mockMvc = createMockMvc();
         String refreshToken = extractJsonValue(login(mockMvc), "refreshToken");
@@ -97,7 +107,21 @@ public class StudentAuthControllerTest {
     private MockMvc createMockMvc() {
         InMemoryStudentRepository studentRepository = new InMemoryStudentRepository();
         studentRepository.save(new Student(1L, "student-a", "123456", AuditStatus.APPROVED, 0, null,
-                "计算机科学", "一班", 2022, "A公司", "杭州", "13800000000", "student-a@example.com"));
+                "computer science", "class one", 2022, "company-a", "hangzhou", "13800000000", "student-a@example.com"));
+        InMemoryRefreshTokenStore tokenStore = new InMemoryRefreshTokenStore();
+        AuthTokenService tokenService = new AuthTokenService("test-secret", tokenStore, clock);
+        StudentLoginService loginService = new StudentLoginService(studentRepository, tokenService, clock);
+        StudentContactService contactService = new StudentContactService(studentRepository);
+        return MockMvcBuilders.standaloneSetup(
+                new StudentAuthController(loginService, tokenService),
+                new StudentController(loginService, contactService, tokenService)
+        ).build();
+    }
+
+    private MockMvc createMockMvcWithDisabledStudent() {
+        InMemoryStudentRepository studentRepository = new InMemoryStudentRepository();
+        studentRepository.save(new Student(1L, "student-disabled", "123456", AuditStatus.DISABLED, 0, null,
+                "computer science", "class one", 2022, "company-a", "hangzhou", "13800000000", "student-disabled@example.com"));
         InMemoryRefreshTokenStore tokenStore = new InMemoryRefreshTokenStore();
         AuthTokenService tokenService = new AuthTokenService("test-secret", tokenStore, clock);
         StudentLoginService loginService = new StudentLoginService(studentRepository, tokenService, clock);

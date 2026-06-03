@@ -113,9 +113,10 @@ public class StudentAuthControllerTest {
         AuthTokenService tokenService = new AuthTokenService("test-secret", tokenStore, clock);
         StudentLoginService loginService = new StudentLoginService(studentRepository, tokenService, clock);
         StudentContactService contactService = new StudentContactService(studentRepository);
+        StudentProfileService profileService = new StudentProfileService(studentRepository);
         return MockMvcBuilders.standaloneSetup(
                 new StudentAuthController(loginService, tokenService),
-                new StudentController(loginService, contactService, tokenService)
+                new StudentController(loginService, contactService, profileService, tokenService)
         ).build();
     }
 

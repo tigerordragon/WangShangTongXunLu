@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** 在内存中保存学生数据，供当前登录模块使用。*/
@@ -39,18 +40,20 @@ public class InMemoryStudentRepository implements StudentRepository {
         return Optional.ofNullable(studentsById.get(id));
     }
 
-    /** 返回全部学生。*/
+    /** 查询全部学生。 */
     @Override
     public Collection<Student> findAll() {
-        return studentsById.values();
+        return studentsById.values().stream()
+                .sorted((left, right) -> Long.compare(left.getId(), right.getId()))
+                .collect(Collectors.toList());
     }
 
-    /** 删除学生记录。*/
+    /** 按审核状态查询学生。 */
     @Override
-    public void deleteById(Long id) {
-        Student removed = studentsById.remove(id);
-        if (removed != null) {
-            studentsByUsername.remove(removed.getUsername());
-        }
+    public Collection<Student> findByAuditStatus(AuditStatus auditStatus) {
+        return studentsById.values().stream()
+                .filter(student -> student.getAuditStatus() == auditStatus)
+                .sorted((left, right) -> Long.compare(left.getId(), right.getId()))
+                .collect(Collectors.toList());
     }
 }

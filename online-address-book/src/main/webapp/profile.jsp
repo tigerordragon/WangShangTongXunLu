@@ -6,6 +6,8 @@
 </head>
 <body>
 <h2>我的通讯录信息</h2>
+<p><a href="index.jsp">返回首页</a></p>
+<p id="statusMessage"></p>
 <p>
   <label>登录账号</label>
   <input id="username" name="username" value="student"/>
@@ -27,7 +29,7 @@
   </p>
   <p>
     <label>年份</label>
-    <input name="enrollmentYear" id="enrollmentYear" type="number"/>
+    <input name="enrollmentYear" id="enrollmentYear" type="number" min="1900" max="2100"/>
   </p>
   <p>
     <label>就业单位</label>
@@ -47,9 +49,27 @@
   </p>
   <button type="submit">保存</button>
 </form>
-<pre id="profileResult"></pre>
 <script>
-var accessToken = '';
+var ACCESS_TOKEN_KEY = 'studentProfileAccessToken';
+var accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY) || '';
+
+function showStatus(text, isError) {
+  var el = document.getElementById('statusMessage');
+  el.textContent = text || '';
+  el.style.color = isError ? '#b00020' : '#1b5e20';
+}
+
+function parseMessage(body) {
+  try {
+    var data = JSON.parse(body);
+    if (data.message) {
+      return data.message;
+    }
+  } catch (e) {
+    // ignore
+  }
+  return body;
+}
 
 function apiFetch(path, options) {
   var headers = options.headers || {};
@@ -68,18 +88,29 @@ function apiFetch(path, options) {
 function fillProfile(data) {
   document.getElementById('major').value = data.major || '';
   document.getElementById('className').value = data.className || '';
-  document.getElementById('enrollmentYear').value = data.enrollmentYear || '';
+  document.getElementById('enrollmentYear').value = data.enrollmentYear != null ? data.enrollmentYear : '';
   document.getElementById('jobUnit').value = data.jobUnit || '';
   document.getElementById('city').value = data.city || '';
   document.getElementById('contactMethod').value = data.contactMethod || '';
   document.getElementById('email').value = data.email || '';
 }
 
+function persistToken(token) {
+  accessToken = token || '';
+  if (accessToken) {
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  } else {
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  }
+}
+
 function loadProfile() {
   return apiFetch('/students/me/contact', { method: 'GET' }).then(function (result) {
-    document.getElementById('profileResult').textContent = result.body;
     if (result.ok) {
       fillProfile(JSON.parse(result.body));
+      showStatus('已加载通讯录信息', false);
+    } else {
+      showStatus(parseMessage(result.body), true);
     }
     return result;
   });
@@ -93,13 +124,13 @@ document.getElementById('loginBtn').addEventListener('click', function () {
       password: document.getElementById('password').value
     })
   }).then(function (result) {
-    document.getElementById('profileResult').textContent = result.body;
     if (!result.ok) {
-      accessToken = '';
+      persistToken('');
+      showStatus(parseMessage(result.body), true);
       return;
     }
     var loginData = JSON.parse(result.body);
-    accessToken = loginData.accessToken;
+    persistToken(loginData.accessToken);
     return loadProfile();
   });
 });
@@ -107,7 +138,7 @@ document.getElementById('loginBtn').addEventListener('click', function () {
 document.getElementById('profileForm').addEventListener('submit', function (event) {
   event.preventDefault();
   if (!accessToken) {
-    document.getElementById('profileResult').textContent = '请先登录';
+    showStatus('请先登录', true);
     return;
   }
   var form = event.target;
@@ -123,12 +154,18 @@ document.getElementById('profileForm').addEventListener('submit', function (even
       email: form.email.value
     })
   }).then(function (result) {
-    document.getElementById('profileResult').textContent = result.body;
     if (result.ok) {
       fillProfile(JSON.parse(result.body));
+      showStatus('保存成功', false);
+    } else {
+      showStatus(parseMessage(result.body), true);
     }
   });
 });
+
+if (accessToken) {
+  loadProfile();
+}
 </script>
 </body>
 </html>

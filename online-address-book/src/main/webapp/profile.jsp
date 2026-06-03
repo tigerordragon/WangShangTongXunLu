@@ -1,134 +1,98 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<html>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
-  <title>我的通讯录</title>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>完善自己的通讯录 - 网上通讯录</title>
+  <link rel="stylesheet" href="assets/styles.css">
 </head>
-<body>
-<h2>我的通讯录信息</h2>
-<p>
-  <label>登录账号</label>
-  <input id="username" name="username" value="student"/>
-</p>
-<p>
-  <label>密码</label>
-  <input id="password" name="password" type="password" value="123456"/>
-</p>
-<button type="button" id="loginBtn">登录并加载</button>
-<hr/>
-<form id="profileForm">
-  <p>
-    <label>专业</label>
-    <input name="major" id="major"/>
-  </p>
-  <p>
-    <label>班级</label>
-    <input name="className" id="className"/>
-  </p>
-  <p>
-    <label>年份</label>
-    <input name="enrollmentYear" id="enrollmentYear" type="number"/>
-  </p>
-  <p>
-    <label>就业单位</label>
-    <input name="jobUnit" id="jobUnit"/>
-  </p>
-  <p>
-    <label>城市</label>
-    <input name="city" id="city"/>
-  </p>
-  <p>
-    <label>联系方式</label>
-    <input name="contactMethod" id="contactMethod"/>
-  </p>
-  <p>
-    <label>邮箱</label>
-    <input name="email" id="email" type="email"/>
-  </p>
-  <button type="submit">保存</button>
-</form>
-<pre id="profileResult"></pre>
-<script>
-var accessToken = '';
+<body data-page="profile" data-context="<%= request.getContextPath() %>">
+  <div class="shell">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Profile</div>
+        <h1>学生完善自己的通讯录</h1>
+        <p class="lead">
+          登录后可以维护自己的专业、班级、入学年份、就业单位、城市、联系方式和邮箱。
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button type="button" class="secondary" data-go="search">查询同学通讯录</button>
+        <button type="button" class="secondary" id="profileLogoutBtn">退出登录</button>
+      </div>
+    </section>
 
-function apiFetch(path, options) {
-  var headers = options.headers || {};
-  headers['Content-Type'] = 'application/json';
-  if (accessToken) {
-    headers['Authorization'] = 'Bearer ' + accessToken;
-  }
-  options.headers = headers;
-  return fetch('api' + path, options).then(function (response) {
-    return response.text().then(function (body) {
-      return { ok: response.ok, status: response.status, body: body };
-    });
-  });
-}
+    <section class="grid grid-two">
+      <article class="card">
+        <div class="card-header">
+          <h2>个人通讯录</h2>
+          <p>调用 <code>/api/students/me/contact</code> 获取和保存自己的通讯录信息。</p>
+        </div>
+        <form id="profileForm" class="card-body form-grid">
+          <div class="form-row">
+            <label>
+              专业
+              <input id="profileMajor" name="major" placeholder="请输入专业">
+            </label>
+            <label>
+              班级
+              <input id="profileClassName" name="className" placeholder="请输入班级">
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              入学年份
+              <input id="profileEnrollmentYear" name="enrollmentYear" type="number" placeholder="例如：2022">
+            </label>
+            <label>
+              就业单位
+              <input id="profileJobUnit" name="jobUnit" placeholder="请输入就业单位">
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              城市
+              <input id="profileCity" name="city" placeholder="请输入城市">
+            </label>
+            <label>
+              联系方式
+              <input id="profileContactMethod" name="contactMethod" placeholder="手机号 / 微信 / 其他">
+            </label>
+          </div>
+          <label>
+            邮箱
+            <input id="profileEmail" name="email" type="email" placeholder="请输入邮箱">
+          </label>
+          <div class="form-actions">
+            <button type="submit">保存通讯录</button>
+            <button type="button" class="secondary" id="profileReloadBtn">重新加载</button>
+          </div>
+        </form>
+      </article>
 
-function fillProfile(data) {
-  document.getElementById('major').value = data.major || '';
-  document.getElementById('className').value = data.className || '';
-  document.getElementById('enrollmentYear').value = data.enrollmentYear || '';
-  document.getElementById('jobUnit').value = data.jobUnit || '';
-  document.getElementById('city').value = data.city || '';
-  document.getElementById('contactMethod').value = data.contactMethod || '';
-  document.getElementById('email').value = data.email || '';
-}
+      <article class="card">
+        <div class="card-header">
+          <h2>登录记录</h2>
+          <p>页面会同步显示当前账号的登录次数和最近登录时间。</p>
+        </div>
+        <div class="card-body stacked">
+          <div class="info-grid info-grid-single" id="profileLoginInfo">
+            <div class="info-box">
+              <div class="info-title">登录次数</div>
+              <div class="info-value">-</div>
+            </div>
+            <div class="info-box">
+              <div class="info-title">最近登录时间</div>
+              <div class="info-value">-</div>
+            </div>
+          </div>
+          <div id="profileSummary" class="notice notice-info">请先登录后查看和编辑自己的通讯录。</div>
+        </div>
+      </article>
+    </section>
+  </div>
 
-function loadProfile() {
-  return apiFetch('/students/me/contact', { method: 'GET' }).then(function (result) {
-    document.getElementById('profileResult').textContent = result.body;
-    if (result.ok) {
-      fillProfile(JSON.parse(result.body));
-    }
-    return result;
-  });
-}
-
-document.getElementById('loginBtn').addEventListener('click', function () {
-  apiFetch('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({
-      username: document.getElementById('username').value,
-      password: document.getElementById('password').value
-    })
-  }).then(function (result) {
-    document.getElementById('profileResult').textContent = result.body;
-    if (!result.ok) {
-      accessToken = '';
-      return;
-    }
-    var loginData = JSON.parse(result.body);
-    accessToken = loginData.accessToken;
-    return loadProfile();
-  });
-});
-
-document.getElementById('profileForm').addEventListener('submit', function (event) {
-  event.preventDefault();
-  if (!accessToken) {
-    document.getElementById('profileResult').textContent = '请先登录';
-    return;
-  }
-  var form = event.target;
-  apiFetch('/students/me/contact', {
-    method: 'PUT',
-    body: JSON.stringify({
-      major: form.major.value,
-      className: form.className.value,
-      enrollmentYear: form.enrollmentYear.value ? Number(form.enrollmentYear.value) : null,
-      jobUnit: form.jobUnit.value,
-      city: form.city.value,
-      contactMethod: form.contactMethod.value,
-      email: form.email.value
-    })
-  }).then(function (result) {
-    document.getElementById('profileResult').textContent = result.body;
-    if (result.ok) {
-      fillProfile(JSON.parse(result.body));
-    }
-  });
-});
-</script>
+  <script src="assets/app.js"></script>
 </body>
 </html>

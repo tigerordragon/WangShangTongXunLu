@@ -47,6 +47,18 @@ public class StudentLoginServiceTest {
     }
 
     @Test
+    public void loginFailsForDisabledStudent() {
+        InMemoryStudentRepository repository = new InMemoryStudentRepository();
+        repository.save(new Student(5L, "student-e", "123456", AuditStatus.DISABLED, 0, null));
+        StudentLoginService service = createService(repository);
+
+        LoginResult result = service.login("student-e", "123456");
+
+        assertEquals(LoginStatus.DISABLED, result.getStatus());
+        assertFalse(result.hasTokenPair());
+    }
+
+    @Test
     public void loginFailsForWrongPassword() {
         InMemoryStudentRepository repository = new InMemoryStudentRepository();
         repository.save(new Student(3L, "student-c", "123456", AuditStatus.APPROVED, 0, null));

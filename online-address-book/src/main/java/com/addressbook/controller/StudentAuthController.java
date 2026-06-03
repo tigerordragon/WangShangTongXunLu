@@ -38,10 +38,10 @@ public class StudentAuthController {
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         LoginResult result = loginService.login(request.getUsername(), request.getPassword());
         if (result.getStatus() == LoginStatus.INVALID_CREDENTIALS) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(false, "账号或密码不正确"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(false, "invalid credentials"));
         }
         if (result.getStatus() == LoginStatus.NOT_APPROVED) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(false, "账号未通过审核"));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(false, "account not approved"));
         }
         AuthTokenPair tokenPair = result.getTokenPair();
         return ResponseEntity.ok(new LoginResponse(
@@ -58,7 +58,7 @@ public class StudentAuthController {
     public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest request) {
         Optional<String> accessToken = tokenService.refreshAccessToken(request.getRefreshToken());
         if (!accessToken.isPresent()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(false, "刷新 token 无效"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(false, "refresh token invalid"));
         }
         return ResponseEntity.ok(new AccessTokenResponse(true, accessToken.get()));
     }
@@ -67,7 +67,7 @@ public class StudentAuthController {
     @PostMapping("/logout")
     public ResponseEntity<MessageResponse> logout(@RequestBody RefreshTokenRequest request) {
         tokenService.revokeRefreshToken(request.getRefreshToken());
-        return ResponseEntity.ok(new MessageResponse(true, "退出成功"));
+        return ResponseEntity.ok(new MessageResponse(true, "logout success"));
     }
 
     /** 格式化时间给前端展示。 */

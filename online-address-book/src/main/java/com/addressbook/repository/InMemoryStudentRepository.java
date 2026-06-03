@@ -4,8 +4,10 @@ import com.addressbook.entity.AuditStatus;
 import com.addressbook.entity.Student;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** 在内存中保存学生数据，供当前登录模块使用。 */
@@ -36,5 +38,22 @@ public class InMemoryStudentRepository implements StudentRepository {
     @Override
     public Optional<Student> findById(Long id) {
         return Optional.ofNullable(studentsById.get(id));
+    }
+
+    /** 查询全部学生。 */
+    @Override
+    public List<Student> findAll() {
+        return studentsById.values().stream()
+                .sorted((left, right) -> Long.compare(left.getId(), right.getId()))
+                .collect(Collectors.toList());
+    }
+
+    /** 按审核状态查询学生。 */
+    @Override
+    public List<Student> findByAuditStatus(AuditStatus auditStatus) {
+        return studentsById.values().stream()
+                .filter(student -> student.getAuditStatus() == auditStatus)
+                .sorted((left, right) -> Long.compare(left.getId(), right.getId()))
+                .collect(Collectors.toList());
     }
 }

@@ -17,6 +17,9 @@ public interface StudentRepository {
     /** 按学生 ID 查询学生。*/
     Optional<Student> findById(Long id);
 
+    /** 按学生 ID 删除学生。*/
+    void deleteById(Long id);
+
     /** 查询全部学生。 */
     Collection<Student> findAll();
 

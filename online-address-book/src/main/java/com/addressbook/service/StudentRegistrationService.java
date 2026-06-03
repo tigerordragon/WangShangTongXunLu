@@ -5,7 +5,7 @@ import com.addressbook.entity.Student;
 import com.addressbook.repository.StudentRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 
 /** 负责学生注册与待审状态初始化。 */
@@ -38,7 +38,7 @@ public class StudentRegistrationService {
     }
 
     /** 生成下一个学生 ID。 */
-    private Long nextStudentId(List<Student> students) {
+    private Long nextStudentId(Collection<Student> students) {
         Long maxId = 0L;
         for (Student student : students) {
             if (student.getId() != null && student.getId() > maxId) {

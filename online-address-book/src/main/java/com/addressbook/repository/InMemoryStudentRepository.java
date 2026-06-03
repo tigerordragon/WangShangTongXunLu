@@ -40,6 +40,15 @@ public class InMemoryStudentRepository implements StudentRepository {
         return Optional.ofNullable(studentsById.get(id));
     }
 
+    /** 按学生 ID 删除学生。*/
+    @Override
+    public void deleteById(Long id) {
+        Student removed = studentsById.remove(id);
+        if (removed != null) {
+            studentsByUsername.remove(removed.getUsername());
+        }
+    }
+
     /** 查询全部学生。 */
     @Override
     public Collection<Student> findAll() {

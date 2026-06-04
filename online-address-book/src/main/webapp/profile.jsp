@@ -7,7 +7,17 @@
   <title>完善自己的通讯录 - 网上通讯录</title>
   <link rel="stylesheet" href="assets/styles.css">
 </head>
-<body data-page="profile" data-context="<%= request.getContextPath() %>">
+<body class="app-page" data-page="profile" data-context="<%= request.getContextPath() %>">
+  <nav class="site-nav" aria-label="主导航">
+    <button type="button" class="site-nav-brand" data-go="login">网上通讯录</button>
+    <div class="site-nav-menu">
+      <button type="button" class="site-nav-link" data-go="login">学生登录</button>
+      <button type="button" class="site-nav-link" data-go="register">学生注册</button>
+      <button type="button" class="site-nav-link is-active" data-go="profile">我的通讯录</button>
+      <button type="button" class="site-nav-link" data-go="search">查询同学</button>
+      <button type="button" class="site-nav-link" data-go="admin-login">管理员</button>
+    </div>
+  </nav>
   <div class="shell">
     <section class="hero">
       <div>

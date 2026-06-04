@@ -149,7 +149,7 @@
         ok: false,
         status: 0,
         payload: null,
-        text: error && error.message ? error.message : "Network error"
+        text: error && error.message ? error.message : "网络错误"
       };
     });
   }
@@ -169,10 +169,10 @@
     }
     var auth = loadStudentAuth();
     if (!auth || !auth.accessToken) {
-      el.textContent = "Not signed in";
+      el.textContent = "尚未登录";
       return;
     }
-    el.innerHTML = "<div>Signed in: <strong>" + escapeHtml(auth.username || "unknown") + "</strong></div><div class='muted'>Student token saved locally</div>";
+    el.innerHTML = "<div>已登录：<strong>" + escapeHtml(auth.username || "未知") + "</strong></div><div class='muted'>学生访问令牌已保存在本地</div>";
   }
 
   function renderAdminSessionSummary() {
@@ -182,10 +182,10 @@
     }
     var session = loadAdminSession();
     if (!session) {
-      el.textContent = "Not signed in";
+      el.textContent = "尚未登录";
       return;
     }
-    el.innerHTML = "<div>Admin: <strong>" + escapeHtml(session.displayName || session.username || "unknown") + "</strong></div><div class='muted'>Account: " + escapeHtml(session.username || "-") + "</div>";
+    el.innerHTML = "<div>管理员：<strong>" + escapeHtml(session.displayName || session.username || "未知") + "</strong></div><div class='muted'>账号：" + escapeHtml(session.username || "-") + "</div>";
   }
 
   function renderLoginInfo(data) {
@@ -222,7 +222,7 @@
     }
     if (!rows || !rows.length) {
       container.className = "table-wrap empty-state";
-      container.textContent = emptyText || "No data.";
+      container.textContent = emptyText || "暂无数据。";
       return;
     }
 
@@ -261,14 +261,32 @@
       clearStudentAuth();
     }
     if (noticeId) {
-      var message = result.payload && result.payload.message ? result.payload.message : result.text || "Request failed";
+      var message = result.payload && result.payload.message ? result.payload.message : result.text || "请求失败";
       setNotice(noticeId, "danger", message);
     }
+  }
+
+  function auditStatusLabel(status) {
+    var map = {
+      PENDING: "待审核",
+      APPROVED: "已通过",
+      REJECTED: "已拒绝",
+      DISABLED: "已禁用"
+    };
+    var key = String(status || "").toUpperCase();
+    return map[key] || status || "-";
+  }
+
+  var LOGIN_STATUS_HINT = "请使用审核通过的学生账号登录。";
+
+  function setLoginStatusHint() {
+    setNotice("loginStatus", "info", LOGIN_STATUS_HINT);
   }
 
   function initLoginPage() {
     attachNavigation();
     renderStudentSessionSummary();
+    setLoginStatusHint();
 
     var form = byId("loginForm");
     if (form) {
@@ -277,7 +295,6 @@
         var username = byId("loginUsername").value.trim();
         var password = byId("loginPassword").value;
 
-        setNotice("loginStatus", "info", "Signing in...");
         request("/auth/login", {
           method: "POST",
           body: { username: username, password: password }
@@ -288,7 +305,6 @@
             return;
           }
           storeStudentLogin(result.payload, username);
-          setNotice("loginStatus", "success", "登录成功，正在进入通讯录完善页面...");
           redirectTo("profile");
         });
       });
@@ -299,7 +315,7 @@
       demoBtn.addEventListener("click", function () {
         byId("loginUsername").value = "student";
         byId("loginPassword").value = "123456";
-        setNotice("loginStatus", "info", "Demo student account filled.");
+        setNotice("loginStatus", "info", "示例学生已填充");
       });
     }
 
@@ -333,23 +349,23 @@
         var password = byId("registerPassword").value;
         var confirm = byId("registerPasswordConfirm").value;
         if (!username || !password) {
-          setNotice("registerStatus", "warning", "Username and password are required.");
+          setNotice("registerStatus", "warning", "请填写登录账号和密码。");
           return;
         }
         if (password !== confirm) {
-          setNotice("registerStatus", "warning", "The two passwords do not match.");
+          setNotice("registerStatus", "warning", "两次输入的密码不一致。");
           return;
         }
-        setNotice("registerStatus", "info", "Submitting registration...");
+        setNotice("registerStatus", "info", "正在提交注册...");
         request("/students/register", {
           method: "POST",
           body: { username: username, password: password }
         }).then(function (result) {
           if (!result.ok) {
-            setNotice("registerStatus", "danger", result.payload && result.payload.message ? result.payload.message : "Registration failed.");
+            setNotice("registerStatus", "danger", result.payload && result.payload.message ? result.payload.message : "注册失败。");
             return;
           }
-          setNotice("registerStatus", "success", "Student registered. Status: " + escapeHtml(result.payload.auditStatus || "PENDING"));
+          setNotice("registerStatus", "success", "注册成功，当前状态：" + escapeHtml(auditStatusLabel(result.payload.auditStatus || "PENDING")));
           form.reset();
           byId("registerUsername").value = username;
         });
@@ -362,7 +378,7 @@
         byId("registerUsername").value = "new-student";
         byId("registerPassword").value = "123456";
         byId("registerPasswordConfirm").value = "123456";
-        setNotice("registerStatus", "info", "Demo registration filled.");
+        setNotice("registerStatus", "info", "示例学生注册已填充");
       });
     }
   }
@@ -378,7 +394,7 @@
         var username = byId("adminLoginUsername").value.trim();
         var password = byId("adminLoginPassword").value;
         if (!username || !password) {
-          setNotice("adminLoginStatus", "warning", "Admin username and password are required.");
+          setNotice("adminLoginStatus", "warning", "请填写管理员账号和密码。");
           return;
         }
         request("/admin/auth/login", {
@@ -408,7 +424,7 @@
       demoBtn.addEventListener("click", function () {
         byId("adminLoginUsername").value = "gl1";
         byId("adminLoginPassword").value = "123456";
-        setNotice("adminLoginStatus", "info", "Default admin filled.");
+        setNotice("adminLoginStatus", "info", "示例管理员已填充");
       });
     }
 
@@ -472,7 +488,7 @@
         byId("adminRegisterUsername").value = "admin2";
         byId("adminRegisterPassword").value = "123456";
         byId("adminRegisterPasswordConfirm").value = "123456";
-        byId("adminRegisterDisplayName").value = "Admin Two";
+        byId("adminRegisterDisplayName").value = "管理员二号";
         setNotice("adminRegisterStatus", "info", "已填充示例账号。");
         setNotice("adminRegisterFormStatus", "info", "已填充示例账号。");
       });
@@ -483,20 +499,20 @@
     return rows.map(function (row) {
       var actions = [];
       if (mode === "pending") {
-        actions.push("<button type='button' class='success' data-approve='" + row.studentId + "'>Approve</button>");
-        actions.push("<button type='button' class='danger' data-reject='" + row.studentId + "'>Reject</button>");
+        actions.push("<button type='button' class='success' data-approve='" + row.studentId + "'>通过</button>");
+        actions.push("<button type='button' class='danger' data-reject='" + row.studentId + "'>拒绝</button>");
       } else if (mode === "unapproved") {
-        actions.push("<button type='button' class='danger' data-delete-student='" + row.id + "'>Delete</button>");
+        actions.push("<button type='button' class='danger' data-delete-student='" + row.id + "'>删除</button>");
       } else if (mode === "approved") {
-        actions.push("<button type='button' class='danger' data-disable-student='" + row.id + "'>Disable</button>");
+        actions.push("<button type='button' class='danger' data-disable-student='" + row.id + "'>禁用</button>");
       } else if (mode === "disabled") {
-        actions.push("<button type='button' class='success' data-enable-student='" + row.id + "'>Enable</button>");
+        actions.push("<button type='button' class='success' data-enable-student='" + row.id + "'>启用</button>");
       }
       return {
         id: row.id || row.studentId,
         studentId: row.studentId || row.id,
         username: escapeHtml(row.username || "-"),
-        auditStatus: "<span class='tag tag-" + String(row.auditStatus || "").toLowerCase() + "'>" + escapeHtml(row.auditStatus || "") + "</span>",
+        auditStatus: "<span class='tag tag-" + String(row.auditStatus || "").toLowerCase() + "'>" + escapeHtml(auditStatusLabel(row.auditStatus)) + "</span>",
         major: escapeHtml(row.major || "-"),
         className: escapeHtml(row.className || "-"),
         enrollmentYear: row.enrollmentYear == null ? "-" : String(row.enrollmentYear),
@@ -511,8 +527,8 @@
         id: row.id,
         name: escapeHtml(row.name || ""),
         actions: "<div class='row-actions'>" +
-          "<button type='button' class='secondary' data-edit-professional='" + row.id + "' data-name='" + escapeHtml(row.name || "") + "'>Edit</button>" +
-          "<button type='button' class='danger' data-delete-professional='" + row.id + "'>Delete</button>" +
+          "<button type='button' class='secondary' data-edit-professional='" + row.id + "' data-name='" + escapeHtml(row.name || "") + "'>编辑</button>" +
+          "<button type='button' class='danger' data-delete-professional='" + row.id + "'>删除</button>" +
           "</div>"
       };
     });
@@ -522,14 +538,14 @@
     return rows.map(function (row) {
       var actions = [];
       if (canAudit && row.auditStatus === "PENDING") {
-        actions.push("<button type='button' class='success' data-approve-admin='" + row.id + "'>Approve</button>");
-        actions.push("<button type='button' class='danger' data-reject-admin='" + row.id + "'>Reject</button>");
+        actions.push("<button type='button' class='success' data-approve-admin='" + row.id + "'>通过</button>");
+        actions.push("<button type='button' class='danger' data-reject-admin='" + row.id + "'>拒绝</button>");
       }
       return {
         id: row.id,
         username: escapeHtml(row.username || "-"),
         displayName: escapeHtml(row.displayName || "-"),
-        auditStatus: "<span class='tag tag-" + String(row.auditStatus || "").toLowerCase() + "'>" + escapeHtml(row.auditStatus || "") + "</span>",
+        auditStatus: "<span class='tag tag-" + String(row.auditStatus || "").toLowerCase() + "'>" + escapeHtml(auditStatusLabel(row.auditStatus)) + "</span>",
         createdAt: escapeHtml(row.createdAt || "-"),
         reviewedBy: escapeHtml(row.reviewedBy || "-"),
         reviewedAt: escapeHtml(row.reviewedAt || "-"),
@@ -541,39 +557,39 @@
   function bindStudentAuditActions(root) {
     root.querySelectorAll("[data-approve]").forEach(function (button) {
       button.addEventListener("click", function () {
-        actStudentAudit("/admin/audits/students/" + button.dataset.approve + "/approve", "Approve");
+        actStudentAudit("/admin/audits/students/" + button.dataset.approve + "/approve", "通过");
       });
     });
     root.querySelectorAll("[data-reject]").forEach(function (button) {
       button.addEventListener("click", function () {
-        actStudentAudit("/admin/audits/students/" + button.dataset.reject + "/reject", "Reject");
+        actStudentAudit("/admin/audits/students/" + button.dataset.reject + "/reject", "拒绝");
       });
     });
     root.querySelectorAll("[data-delete-student]").forEach(function (button) {
       button.addEventListener("click", function () {
-        actStudentAdmin("/admin/students/" + button.dataset.deleteStudent, "Delete", "DELETE");
+        actStudentAdmin("/admin/students/" + button.dataset.deleteStudent, "删除", "DELETE");
       });
     });
     root.querySelectorAll("[data-disable-student]").forEach(function (button) {
       button.addEventListener("click", function () {
-        actStudentAdmin("/admin/students/" + button.dataset.disableStudent + "/disable", "Disable", "POST");
+        actStudentAdmin("/admin/students/" + button.dataset.disableStudent + "/disable", "禁用", "POST");
       });
     });
     root.querySelectorAll("[data-enable-student]").forEach(function (button) {
       button.addEventListener("click", function () {
-        actStudentAdmin("/admin/students/" + button.dataset.enableStudent + "/enable", "Enable", "POST");
+        actStudentAdmin("/admin/students/" + button.dataset.enableStudent + "/enable", "启用", "POST");
       });
     });
     root.querySelectorAll("[data-edit-professional]").forEach(function (button) {
       button.addEventListener("click", function () {
         byId("professionalId").value = button.dataset.editProfessional;
         byId("professionalName").value = button.dataset.name || "";
-        byId("professionalSubmitBtn").textContent = "Save";
+        byId("professionalSubmitBtn").textContent = "保存";
       });
     });
     root.querySelectorAll("[data-delete-professional]").forEach(function (button) {
       button.addEventListener("click", function () {
-        actProfessional("/admin/professionals/" + button.dataset.deleteProfessional, "Delete", "DELETE");
+        actProfessional("/admin/professionals/" + button.dataset.deleteProfessional, "删除", "DELETE");
       });
     });
   }
@@ -597,10 +613,10 @@
     }
     request(path, { method: "POST" }).then(function (result) {
       if (!result.ok) {
-        setNotice("adminStatus", "danger", result.payload && result.payload.message ? result.payload.message : label + " failed.");
+        setNotice("adminStatus", "danger", result.payload && result.payload.message ? result.payload.message : label + "失败。");
         return;
       }
-      setNotice("adminStatus", "success", label + " successful.");
+      setNotice("adminStatus", "success", label + "成功。");
       loadAdminStudentData();
     });
   }
@@ -611,10 +627,10 @@
     }
     request(path, { method: method }).then(function (result) {
       if (!result.ok) {
-        setNotice("adminStatus", "danger", result.payload && result.payload.message ? result.payload.message : label + " failed.");
+        setNotice("adminStatus", "danger", result.payload && result.payload.message ? result.payload.message : label + "失败。");
         return;
       }
-      setNotice("adminStatus", "success", label + " successful.");
+      setNotice("adminStatus", "success", label + "成功。");
       loadAdminStudentData();
     });
   }
@@ -625,10 +641,10 @@
     }
     request(path, { method: method, body: body }).then(function (result) {
       if (!result.ok) {
-        setNotice("adminStatus", "danger", result.payload && result.payload.message ? result.payload.message : label + " failed.");
+        setNotice("adminStatus", "danger", result.payload && result.payload.message ? result.payload.message : label + "失败。");
         return;
       }
-      setNotice("adminStatus", "success", label + " successful.");
+      setNotice("adminStatus", "success", label + "成功。");
       resetProfessionalForm();
       loadAdminStudentData();
     });
@@ -637,7 +653,7 @@
   function actAdminAudit(id, action) {
     var session = loadAdminSession();
     if (!isSuperAdminSession(session)) {
-      setNotice("adminStatus", "warning", "Only gl1 can review admin registrations.");
+      setNotice("adminStatus", "warning", "仅 gl1 可审核管理员注册申请。");
       return;
     }
     var label = action === "approve" ? "通过" : "拒绝";
@@ -650,11 +666,11 @@
       body: { reviewerUsername: session.username }
     }).then(function (result) {
       if (!result.ok) {
-        var message = result.payload && result.payload.message ? result.payload.message : label + " failed.";
+        var message = result.payload && result.payload.message ? result.payload.message : label + "失败。";
         setNotice("adminStatus", "danger", message);
         return;
       }
-      setNotice("adminStatus", "success", "Admin review completed.");
+      setNotice("adminStatus", "success", "管理员审核已完成。");
       loadAdminReviewData();
     });
   }
@@ -680,11 +696,11 @@
     var container = byId("pendingAdminUsers");
     if (!session) {
       if (hint) {
-        setNotice("adminAuditHint", "warning", "Please sign in as an admin first.");
+        setNotice("adminAuditHint", "warning", "请先登录管理员账号。");
       }
       if (container) {
         container.className = "table-wrap empty-state";
-        container.textContent = "Please sign in as an admin first.";
+        container.textContent = "请先登录管理员账号。";
       }
       return;
     }
@@ -693,7 +709,7 @@
 
     var canAuditAdmins = isSuperAdminSession(session);
     if (hint) {
-      setNotice("adminAuditHint", canAuditAdmins ? "info" : "warning", canAuditAdmins ? "gl1 can review admin registrations and student registrations." : "This admin is not gl1, so only student registrations can be reviewed.");
+      setNotice("adminAuditHint", canAuditAdmins ? "info" : "warning", canAuditAdmins ? "gl1 可审核管理员注册与学生注册申请。" : "当前管理员不是 gl1，仅可审核学生注册。");
     }
 
     request("/admin/audits/admins/pending", { method: "GET" }).then(function (result) {
@@ -701,18 +717,18 @@
       if (result.ok && result.payload && result.payload.admins) {
         pendingAdmins = result.payload.admins;
       } else if (!result.ok) {
-        setNotice("adminStatus", "danger", "Failed to load pending admin registrations.");
+        setNotice("adminStatus", "danger", "加载待审核管理员列表失败。");
       }
       renderTable("pendingAdminUsers", [
-        { label: "ID", key: "id" },
-        { label: "Account", key: "username" },
-        { label: "Display Name", key: "displayName" },
-        { label: "Status", key: "auditStatus" },
-        { label: "Created", key: "createdAt" },
-        { label: "Reviewer", key: "reviewedBy" },
-        { label: "Reviewed At", key: "reviewedAt" },
-        { label: "Actions", key: "actions" }
-      ], renderAdminRows(pendingAdmins, canAuditAdmins), "No pending admin registrations.");
+        { label: "编号", key: "id" },
+        { label: "账号", key: "username" },
+        { label: "显示名称", key: "displayName" },
+        { label: "状态", key: "auditStatus" },
+        { label: "注册时间", key: "createdAt" },
+        { label: "审核人", key: "reviewedBy" },
+        { label: "审核时间", key: "reviewedAt" },
+        { label: "操作", key: "actions" }
+      ], renderAdminRows(pendingAdmins, canAuditAdmins), "暂无待审核管理员。");
       bindAdminAuditActions(document);
     });
   }
@@ -732,52 +748,52 @@
       var professional = results[4];
 
       if (!pending.ok || !unapproved.ok || !approved.ok || !disabled.ok || !professional.ok) {
-        setNotice("adminStatus", "danger", "Failed to load admin data. Please check backend endpoints.");
+        setNotice("adminStatus", "danger", "加载管理数据失败，请检查后端服务。");
         return;
       }
 
       renderTable("pendingStudents", [
-        { label: "ID", key: "studentId" },
-        { label: "Account", key: "username" },
-        { label: "Status", key: "auditStatus" },
-        { label: "Actions", key: "actions" }
-      ], renderStudentAuditRows(pending.payload || [], "pending"), "No pending student registrations.");
+        { label: "编号", key: "studentId" },
+        { label: "账号", key: "username" },
+        { label: "状态", key: "auditStatus" },
+        { label: "操作", key: "actions" }
+      ], renderStudentAuditRows(pending.payload || [], "pending"), "暂无待审核学生。");
 
       renderTable("unapprovedStudents", [
-        { label: "ID", key: "id" },
-        { label: "Account", key: "username" },
-        { label: "Status", key: "auditStatus" },
-        { label: "Major", key: "major" },
-        { label: "Class", key: "className" },
-        { label: "Year", key: "enrollmentYear" },
-        { label: "Actions", key: "actions" }
-      ], renderStudentAuditRows((unapproved.payload && unapproved.payload.students) || [], "unapproved"), "No unapproved student accounts.");
+        { label: "编号", key: "id" },
+        { label: "账号", key: "username" },
+        { label: "状态", key: "auditStatus" },
+        { label: "专业", key: "major" },
+        { label: "班级", key: "className" },
+        { label: "入学年份", key: "enrollmentYear" },
+        { label: "操作", key: "actions" }
+      ], renderStudentAuditRows((unapproved.payload && unapproved.payload.students) || [], "unapproved"), "暂无未通过审核的学生。");
 
       renderTable("approvedStudents", [
-        { label: "ID", key: "id" },
-        { label: "Account", key: "username" },
-        { label: "Status", key: "auditStatus" },
-        { label: "Major", key: "major" },
-        { label: "Class", key: "className" },
-        { label: "Year", key: "enrollmentYear" },
-        { label: "Actions", key: "actions" }
-      ], renderStudentAuditRows((approved.payload && approved.payload.students) || [], "approved"), "No approved student accounts.");
+        { label: "编号", key: "id" },
+        { label: "账号", key: "username" },
+        { label: "状态", key: "auditStatus" },
+        { label: "专业", key: "major" },
+        { label: "班级", key: "className" },
+        { label: "入学年份", key: "enrollmentYear" },
+        { label: "操作", key: "actions" }
+      ], renderStudentAuditRows((approved.payload && approved.payload.students) || [], "approved"), "暂无已通过审核的学生。");
 
       renderTable("disabledStudents", [
-        { label: "ID", key: "id" },
-        { label: "Account", key: "username" },
-        { label: "Status", key: "auditStatus" },
-        { label: "Major", key: "major" },
-        { label: "Class", key: "className" },
-        { label: "Year", key: "enrollmentYear" },
-        { label: "Actions", key: "actions" }
-      ], renderStudentAuditRows((disabled.payload && disabled.payload.students) || [], "disabled"), "No disabled student accounts.");
+        { label: "编号", key: "id" },
+        { label: "账号", key: "username" },
+        { label: "状态", key: "auditStatus" },
+        { label: "专业", key: "major" },
+        { label: "班级", key: "className" },
+        { label: "入学年份", key: "enrollmentYear" },
+        { label: "操作", key: "actions" }
+      ], renderStudentAuditRows((disabled.payload && disabled.payload.students) || [], "disabled"), "暂无已禁用学生。");
 
       renderTable("professionalList", [
-        { label: "ID", key: "id" },
-        { label: "Professional Name", key: "name" },
-        { label: "Actions", key: "actions" }
-      ], renderProfessionalRows((professional.payload && professional.payload.professionals) || professional.payload || []), "No professional data.");
+        { label: "编号", key: "id" },
+        { label: "专业名称", key: "name" },
+        { label: "操作", key: "actions" }
+      ], renderProfessionalRows((professional.payload && professional.payload.professionals) || professional.payload || []), "暂无专业数据。");
 
       bindStudentAuditActions(document);
     });
@@ -797,13 +813,13 @@
         var id = byId("professionalId").value.trim();
         var name = byId("professionalName").value.trim();
         if (!name) {
-          setNotice("adminStatus", "warning", "Professional name is required.");
+          setNotice("adminStatus", "warning", "请填写专业名称。");
           return;
         }
         if (id) {
-          actProfessional("/admin/professionals/" + id, "Update professional", "PUT", { name: name });
+          actProfessional("/admin/professionals/" + id, "更新专业", "PUT", { name: name });
         } else {
-          actProfessional("/admin/professionals", "Create professional", "POST", { name: name });
+          actProfessional("/admin/professionals", "新增专业", "POST", { name: name });
         }
       });
     }
@@ -812,7 +828,7 @@
     if (resetBtn) {
       resetBtn.addEventListener("click", function () {
         resetProfessionalForm();
-        setNotice("adminStatus", "info", "Professional form reset.");
+        setNotice("adminStatus", "info", "专业表单已重置。");
       });
     }
 
@@ -845,7 +861,7 @@
         return;
       }
       fillProfileForm(result.payload || {});
-      setNotice("profileSummary", "success", "Profile loaded.");
+      setNotice("profileSummary", "success", "通讯录已加载。");
     });
 
     request("/students/me/login-info", { method: "GET", auth: true }).then(function (result) {
@@ -877,7 +893,7 @@
           contactMethod: byId("profileContactMethod").value.trim(),
           email: byId("profileEmail").value.trim()
         };
-        setNotice("profileSummary", "info", "Saving profile...");
+        setNotice("profileSummary", "info", "正在保存通讯录...");
         request("/students/me/contact", {
           method: "PUT",
           auth: true,
@@ -888,7 +904,7 @@
             return;
           }
           fillProfileForm(result.payload || {});
-          setNotice("profileSummary", "success", "Profile saved.");
+          setNotice("profileSummary", "success", "通讯录已保存。");
         });
       });
     }
@@ -937,7 +953,7 @@
         if (year) {
           params.push("enrollmentYear=" + encodeURIComponent(year));
         }
-        setNotice("searchStatus", "info", "Searching...");
+        setNotice("searchStatus", "info", "正在查询...");
         request("/students/contacts" + (params.length ? "?" + params.join("&") : ""), {
           method: "GET",
           auth: true
@@ -946,21 +962,21 @@
             handleStudentAuthError(result, "searchStatus");
             if (results) {
               results.className = "table-wrap empty-state";
-              results.textContent = "No results.";
+              results.textContent = "暂无查询结果。";
             }
             return;
           }
           var students = result.payload && result.payload.students ? result.payload.students : [];
-          setNotice("searchStatus", "success", "Found " + students.length + " records.");
+          setNotice("searchStatus", "success", "共找到 " + students.length + " 条记录。");
           renderTable("searchResults", [
-            { label: "Account", key: "username" },
-            { label: "Major", key: "major" },
-            { label: "Class", key: "className" },
-            { label: "Year", key: "enrollmentYear" },
-            { label: "Job", key: "jobUnit" },
-            { label: "City", key: "city" },
-            { label: "Contact", key: "contactMethod" },
-            { label: "Email", key: "email" }
+            { label: "账号", key: "username" },
+            { label: "专业", key: "major" },
+            { label: "班级", key: "className" },
+            { label: "入学年份", key: "enrollmentYear" },
+            { label: "就业单位", key: "jobUnit" },
+            { label: "城市", key: "city" },
+            { label: "联系方式", key: "contactMethod" },
+            { label: "邮箱", key: "email" }
           ], students.map(function (row) {
             return {
               username: escapeHtml(row.username || "-"),
@@ -972,7 +988,7 @@
               contactMethod: escapeHtml(row.contactMethod || "-"),
               email: escapeHtml(row.email || "-")
             };
-          }), "No results.");
+          }), "暂无查询结果。");
         });
       });
     }
@@ -981,10 +997,10 @@
     if (clearBtn) {
       clearBtn.addEventListener("click", function () {
         form.reset();
-        setNotice("searchStatus", "info", "Filters cleared.");
+        setNotice("searchStatus", "info", "筛选条件已清空。");
         if (results) {
           results.className = "table-wrap empty-state";
-          results.textContent = "No results.";
+          results.textContent = "暂无查询结果。";
         }
       });
     }

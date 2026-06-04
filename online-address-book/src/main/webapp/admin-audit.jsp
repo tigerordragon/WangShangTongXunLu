@@ -7,7 +7,18 @@
   <title>管理员审核 - 网上通讯录</title>
   <link rel="stylesheet" href="assets/styles.css">
 </head>
-<body data-page="admin-audit" data-context="<%= request.getContextPath() %>">
+<body class="app-page" data-page="admin-audit" data-context="<%= request.getContextPath() %>">
+  <nav class="site-nav" aria-label="主导航">
+    <button type="button" class="site-nav-brand" data-go="login">网上通讯录</button>
+    <div class="site-nav-menu">
+      <button type="button" class="site-nav-link" data-go="login">学生登录</button>
+      <button type="button" class="site-nav-link" data-go="register">学生注册</button>
+      <button type="button" class="site-nav-link" data-go="profile">我的通讯录</button>
+      <button type="button" class="site-nav-link" data-go="search">查询同学</button>
+      <button type="button" class="site-nav-link is-active" data-go="admin-audit">审核后台</button>
+      <button type="button" class="site-nav-link" data-go="admin-login">管理员登录</button>
+    </div>
+  </nav>
   <div class="shell">
     <section class="hero">
       <div>
@@ -72,7 +83,6 @@
     <section class="card">
       <div class="card-header">
         <h2>专业信息维护</h2>
-        <p>对应 <code>/api/admin/professionals</code> 的增删改查。</p>
       </div>
       <div class="card-body stacked">
         <form id="professionalForm" class="form-inline">

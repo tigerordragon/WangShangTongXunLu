@@ -17,7 +17,7 @@ import java.util.List;
 
 /** 处理学生审核相关接口。 */
 @RestController
-@RequestMapping("/admin/students")
+@RequestMapping("/admin/audits/students")
 public class StudentAuditController {
     private final StudentAuditService auditService;
 
@@ -47,10 +47,12 @@ public class StudentAuditController {
     /** 根据审核结果返回响应。 */
     private ResponseEntity<?> handleAuditResult(StudentAuditResult result, String successMessage) {
         if (result.getStatus() == StudentAuditStatus.NOT_FOUND) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(false, "student not found"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new MessageResponse(false, "student not found"));
         }
         if (result.getStatus() == StudentAuditStatus.NOT_PENDING) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(false, "student is not pending"));
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new MessageResponse(false, "student is not pending"));
         }
         return ResponseEntity.ok(new MessageResponse(true, successMessage));
     }

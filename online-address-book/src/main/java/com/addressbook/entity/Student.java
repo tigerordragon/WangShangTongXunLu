@@ -8,7 +8,7 @@ public class Student {
     private final String username;
     private final String password;
     private final AuditStatus auditStatus;
-    private final int loginCount;
+    private final Integer loginCount;
     private final Instant lastLoginTime;
     private final String major;
     private final String className;
@@ -20,11 +20,11 @@ public class Student {
 
     /** 创建学生对象。*/
     public Student(Long id, String username, String password, AuditStatus auditStatus, int loginCount, Instant lastLoginTime) {
-        this(id, username, password, auditStatus, loginCount, lastLoginTime, null, null, null, null, null, null, null);
+        this(id, username, password, auditStatus, Integer.valueOf(loginCount), lastLoginTime, null, null, null, null, null, null, null);
     }
 
-    /** 创建包含通讯录信息的学生对象。*/
-    public Student(Long id, String username, String password, AuditStatus auditStatus, int loginCount, Instant lastLoginTime,
+    /** 创建包含通讯录信息的学生对象（loginCount 使用 Integer 以兼容 MyBatis 与 JDBC）。 */
+    public Student(Long id, String username, String password, AuditStatus auditStatus, Integer loginCount, Instant lastLoginTime,
                    String major, String className, Integer enrollmentYear, String jobUnit, String city, String contactMethod, String email) {
         this.id = id;
         this.username = username;
@@ -51,6 +51,11 @@ public class Student {
         return username;
     }
 
+    /** 返回存储的登录密码（供持久化层写入数据库）。 */
+    public String getPassword() {
+        return password;
+    }
+
     /** 判断密码是否匹配。*/
     public boolean passwordMatches(String inputPassword) {
         return password.equals(inputPassword);
@@ -63,12 +68,13 @@ public class Student {
 
     /** 返回指定审核状态的新对象。 */
     public Student withAuditStatus(AuditStatus newAuditStatus) {
-        return new Student(id, username, password, newAuditStatus, loginCount, lastLoginTime);
+        return new Student(id, username, password, newAuditStatus, loginCount, lastLoginTime,
+                major, className, enrollmentYear, jobUnit, city, contactMethod, email);
     }
 
     /** 返回累计登录次数。 */
     public int getLoginCount() {
-        return loginCount;
+        return loginCount == null ? 0 : loginCount;
     }
 
     /** 返回最近登录时间。*/
@@ -113,7 +119,7 @@ public class Student {
 
     /** 返回记录登录后的学生对象。*/
     public Student recordLogin(Instant loginTime) {
-        return new Student(id, username, password, auditStatus, loginCount + 1, loginTime,
+        return new Student(id, username, password, auditStatus, getLoginCount() + 1, loginTime,
                 major, className, enrollmentYear, jobUnit, city, contactMethod, email);
     }
 

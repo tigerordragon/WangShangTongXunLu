@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** 处理管理员对学生账户的维护操作。 */
+/** 负责管理员对学生账号的维护操作。 */
 @Service
 public class AdminStudentService {
     private final StudentRepository studentRepository;
@@ -19,15 +19,15 @@ public class AdminStudentService {
         this.studentRepository = studentRepository;
     }
 
-    /** 查询所有待删除账户。 */
-    public List<AdminStudentResponse> listPendingAccounts() {
+    /** 查询未通过审核账号，包含待审核和已拒绝。 */
+    public List<AdminStudentResponse> listUnapprovedAccounts() {
         return studentRepository.findAll().stream()
                 .filter(student -> student.getAuditStatus() == AuditStatus.PENDING || student.getAuditStatus() == AuditStatus.REJECTED)
                 .map(AdminStudentResponse::from)
                 .collect(Collectors.toList());
     }
 
-    /** 查询所有已通过审核账户。 */
+    /** 查询所有已通过审核账号。 */
     public List<AdminStudentResponse> listApprovedAccounts() {
         return studentRepository.findAll().stream()
                 .filter(student -> student.getAuditStatus() == AuditStatus.APPROVED)
@@ -35,7 +35,7 @@ public class AdminStudentService {
                 .collect(Collectors.toList());
     }
 
-    /** 查询所有已禁用账户。 */
+    /** 查询所有已禁用账号。 */
     public List<AdminStudentResponse> listDisabledAccounts() {
         return studentRepository.findAll().stream()
                 .filter(student -> student.getAuditStatus() == AuditStatus.DISABLED)
@@ -43,7 +43,7 @@ public class AdminStudentService {
                 .collect(Collectors.toList());
     }
 
-    /** 删除未通过审核账户。 */
+    /** 删除未通过审核账号。 */
     public boolean deleteUnapprovedAccount(Long id) {
         Student student = studentRepository.findById(id).orElse(null);
         if (student == null) {
@@ -56,7 +56,7 @@ public class AdminStudentService {
         return true;
     }
 
-    /** 禁用已通过审核账户。 */
+    /** 禁用已通过审核账号。 */
     public boolean disableApprovedAccount(Long id) {
         Student student = studentRepository.findById(id).orElse(null);
         if (student == null || student.getAuditStatus() != AuditStatus.APPROVED) {
@@ -66,7 +66,7 @@ public class AdminStudentService {
         return true;
     }
 
-    /** 启用已禁用账户。 */
+    /** 启用已禁用账号。 */
     public boolean enableDisabledAccount(Long id) {
         Student student = studentRepository.findById(id).orElse(null);
         if (student == null || student.getAuditStatus() != AuditStatus.DISABLED) {

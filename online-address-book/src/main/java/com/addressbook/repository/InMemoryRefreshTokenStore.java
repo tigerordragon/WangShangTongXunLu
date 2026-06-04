@@ -1,14 +1,11 @@
 package com.addressbook.repository;
 
 import com.addressbook.entity.RefreshTokenRecord;
-import org.springframework.stereotype.Repository;
-
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** 在内存中保存刷新 token，适合当前课程项目的初始实现。 */
-@Repository
+/** 在内存中保存刷新 token，供单元测试使用。 */
 public class InMemoryRefreshTokenStore implements RefreshTokenStore {
     private final Map<String, RefreshTokenRecord> tokens = new ConcurrentHashMap<String, RefreshTokenRecord>();
 

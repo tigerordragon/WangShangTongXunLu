@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.addressbook.mapper.StudentMapper">
+
+    <resultMap id="studentResultMap" type="com.addressbook.entity.Student">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="username" javaType="string"/>
+            <arg column="password" javaType="string"/>
+            <arg column="audit_status" javaType="com.addressbook.entity.AuditStatus"/>
+            <arg column="login_count" javaType="java.lang.Integer"/>
+            <arg column="last_login_time" javaType="java.time.Instant"/>
+            <arg column="major" javaType="string"/>
+            <arg column="class_name" javaType="string"/>
+            <arg column="enrollment_year" javaType="java.lang.Integer"/>
+            <arg column="job_unit" javaType="string"/>
+            <arg column="city" javaType="string"/>
+            <arg column="contact_method" javaType="string"/>
+            <arg column="email" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="studentColumns">
+        id, username, password, audit_status, login_count, last_login_time,
+        major, class_name, enrollment_year, job_unit, city, contact_method, email
+    </sql>
+
+    <insert id="insert" parameterType="com.addressbook.entity.Student">
+        INSERT INTO student (
+            id, username, password, audit_status, login_count, last_login_time,
+            major, class_name, enrollment_year, job_unit, city, contact_method, email
+        ) VALUES (
+            #{id}, #{username}, #{password}, #{auditStatus}, #{loginCount}, #{lastLoginTime},
+            #{major}, #{className}, #{enrollmentYear}, #{jobUnit}, #{city}, #{contactMethod}, #{email}
+        )
+    </insert>
+
+    <update id="update" parameterType="com.addressbook.entity.Student">
+        UPDATE student SET
+            username = #{username},
+            password = #{password},
+            audit_status = #{auditStatus},
+            login_count = #{loginCount},
+            last_login_time = #{lastLoginTime},
+            major = #{major},
+            class_name = #{className},
+            enrollment_year = #{enrollmentYear},
+            job_unit = #{jobUnit},
+            city = #{city},
+            contact_method = #{contactMethod},
+            email = #{email}
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="studentResultMap">
+        SELECT <include refid="studentColumns"/> FROM student WHERE id = #{id}
+    </select>
+
+    <select id="selectByUsername" resultMap="studentResultMap">
+        SELECT <include refid="studentColumns"/> FROM student WHERE username = #{username}
+    </select>
+
+    <select id="selectAll" resultMap="studentResultMap">
+        SELECT <include refid="studentColumns"/> FROM student ORDER BY id
+    </select>
+
+    <select id="selectByAuditStatus" resultMap="studentResultMap">
+        SELECT <include refid="studentColumns"/> FROM student WHERE audit_status = #{auditStatus} ORDER BY id
+    </select>
+
+    <delete id="deleteById">
+        DELETE FROM student WHERE id = #{id}
+    </delete>
+</mapper>

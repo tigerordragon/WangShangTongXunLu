@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.addressbook.mapper.AdminUserMapper">
+
+    <resultMap id="adminUserResultMap" type="com.addressbook.entity.AdminUser">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="username" javaType="string"/>
+            <arg column="password" javaType="string"/>
+            <arg column="display_name" javaType="string"/>
+            <arg column="audit_status" javaType="com.addressbook.entity.AuditStatus"/>
+            <arg column="reviewed_by" javaType="string"/>
+            <arg column="reviewed_at" javaType="java.time.Instant"/>
+            <arg column="created_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="adminUserColumns">
+        id, username, password, display_name, audit_status, reviewed_by, reviewed_at, created_at
+    </sql>
+
+    <insert id="insert" parameterType="com.addressbook.entity.AdminUser">
+        INSERT INTO admin_user (
+            id, username, password, display_name, audit_status, reviewed_by, reviewed_at, created_at
+        ) VALUES (
+            #{id}, #{username}, #{password}, #{displayName}, #{auditStatus},
+            #{reviewedBy}, #{reviewedAt}, #{createdAt}
+        )
+    </insert>
+
+    <update id="update" parameterType="com.addressbook.entity.AdminUser">
+        UPDATE admin_user SET
+            username = #{username},
+            password = #{password},
+            display_name = #{displayName},
+            audit_status = #{auditStatus},
+            reviewed_by = #{reviewedBy},
+            reviewed_at = #{reviewedAt}
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="adminUserResultMap">
+        SELECT <include refid="adminUserColumns"/> FROM admin_user WHERE id = #{id}
+    </select>
+
+    <select id="selectByUsername" resultMap="adminUserResultMap">
+        SELECT <include refid="adminUserColumns"/> FROM admin_user WHERE username = #{username}
+    </select>
+
+    <select id="selectByAuditStatus" resultMap="adminUserResultMap">
+        SELECT <include refid="adminUserColumns"/> FROM admin_user WHERE audit_status = #{auditStatus} ORDER BY id
+    </select>
+
+    <select id="selectMaxId" resultType="long">
+        SELECT COALESCE(MAX(id), 0) FROM admin_user
+    </select>
+</mapper>

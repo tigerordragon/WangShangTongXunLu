@@ -1,16 +1,13 @@
 package com.addressbook.repository;
 
 import com.addressbook.entity.Professional;
-import org.springframework.stereotype.Repository;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** 使用内存保存专业信息。 */
-@Repository
+/** 使用内存保存专业信息，供单元测试使用。 */
 public class InMemoryProfessionalRepository implements ProfessionalRepository {
     private final Map<Long, Professional> professionalsById = new ConcurrentHashMap<Long, Professional>();
     private final Map<String, Professional> professionalsByName = new ConcurrentHashMap<String, Professional>();

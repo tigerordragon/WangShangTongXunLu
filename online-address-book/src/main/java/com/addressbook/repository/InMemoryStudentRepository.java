@@ -2,16 +2,13 @@ package com.addressbook.repository;
 
 import com.addressbook.entity.AuditStatus;
 import com.addressbook.entity.Student;
-import org.springframework.stereotype.Repository;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** 在内存中保存学生数据，供当前登录模块使用。*/
-@Repository
+/** 在内存中保存学生数据，供单元测试使用。 */
 public class InMemoryStudentRepository implements StudentRepository {
     private final Map<Long, Student> studentsById = new ConcurrentHashMap<Long, Student>();
     private final Map<String, Student> studentsByUsername = new ConcurrentHashMap<String, Student>();

@@ -51,6 +51,11 @@ public class Student {
         return username;
     }
 
+    /** 返回存储的登录密码（供持久化层写入数据库）。 */
+    public String getPassword() {
+        return password;
+    }
+
     /** 判断密码是否匹配。*/
     public boolean passwordMatches(String inputPassword) {
         return password.equals(inputPassword);
@@ -63,7 +68,8 @@ public class Student {
 
     /** 返回指定审核状态的新对象。 */
     public Student withAuditStatus(AuditStatus newAuditStatus) {
-        return new Student(id, username, password, newAuditStatus, loginCount, lastLoginTime);
+        return new Student(id, username, password, newAuditStatus, loginCount, lastLoginTime,
+                major, className, enrollmentYear, jobUnit, city, contactMethod, email);
     }
 
     /** 返回累计登录次数。 */

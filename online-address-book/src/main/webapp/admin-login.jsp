@@ -43,7 +43,6 @@
           <div class="form-actions">
             <button type="submit">登录</button>
             <button type="button" class="secondary" id="adminLoginDemoBtn">填充默认账号</button>
-            <button type="button" class="secondary" id="adminLoginLogoutBtn">退出登录</button>
           </div>
         </form>
       </article>

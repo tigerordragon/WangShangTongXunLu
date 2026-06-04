@@ -12,7 +12,6 @@
   };
 
   var STUDENT_AUTH_KEY = "onlineAddressBook.student.auth";
-  var ADMIN_USERS_KEY = "onlineAddressBook.admin.users";
   var ADMIN_SESSION_KEY = "onlineAddressBook.admin.session";
 
   function byId(id) {
@@ -90,34 +89,6 @@
     return auth && auth.accessToken ? auth.accessToken : "";
   }
 
-  function ensureAdminSeed() {
-    var users = readStorage(ADMIN_USERS_KEY);
-    if (!users || !users.length) {
-      users = [
-        {
-          id: 1,
-          username: "gl1",
-          password: "123456",
-          displayName: "Default Admin",
-          auditStatus: "APPROVED",
-          createdAt: "seed",
-          reviewedBy: "system",
-          reviewedAt: "seed"
-        }
-      ];
-      writeStorage(ADMIN_USERS_KEY, users);
-    }
-    return users;
-  }
-
-  function loadAdminUsers() {
-    return ensureAdminSeed();
-  }
-
-  function saveAdminUsers(users) {
-    writeStorage(ADMIN_USERS_KEY, users);
-  }
-
   function loadAdminSession() {
     return readStorage(ADMIN_SESSION_KEY);
   }
@@ -132,97 +103,6 @@
 
   function isSuperAdminSession(session) {
     return session && session.username === "gl1";
-  }
-
-  function nextAdminId(users) {
-    var maxId = 0;
-    users.forEach(function (user) {
-      if (user.id > maxId) {
-        maxId = user.id;
-      }
-    });
-    return maxId + 1;
-  }
-
-  function createAdminAccount(username, password, displayName) {
-    var normalizedUsername = username.trim();
-    var normalizedPassword = password;
-    var normalizedDisplayName = displayName.trim();
-    if (!normalizedUsername || !normalizedPassword) {
-      return { ok: false, message: "Admin username and password are required." };
-    }
-
-    var users = loadAdminUsers();
-    if (users.some(function (user) { return user.username === normalizedUsername; })) {
-      return { ok: false, message: "This admin username already exists." };
-    }
-
-    var admin = {
-      id: nextAdminId(users),
-      username: normalizedUsername,
-      password: normalizedPassword,
-      displayName: normalizedDisplayName || normalizedUsername,
-      auditStatus: "PENDING",
-      createdAt: new Date().toISOString(),
-      reviewedBy: "",
-      reviewedAt: ""
-    };
-    users.push(admin);
-    saveAdminUsers(users);
-    return { ok: true, admin: admin };
-  }
-
-  function loginAdminAccount(username, password) {
-    var admin = loadAdminUsers().find(function (user) {
-      return user.username === username && user.password === password;
-    });
-    if (!admin) {
-      return { ok: false, message: "Admin username or password is incorrect." };
-    }
-    if (admin.auditStatus !== "APPROVED") {
-      return { ok: false, message: "This admin account is not approved yet." };
-    }
-
-    var session = {
-      id: admin.id,
-      username: admin.username,
-      displayName: admin.displayName,
-      auditStatus: admin.auditStatus
-    };
-    saveAdminSession(session);
-    return { ok: true, session: session };
-  }
-
-  function approveAdminAccount(id, reviewer) {
-    var users = loadAdminUsers();
-    var admin = users.find(function (user) { return String(user.id) === String(id); });
-    if (!admin) {
-      return { ok: false, message: "Admin account not found." };
-    }
-    if (admin.auditStatus !== "PENDING") {
-      return { ok: false, message: "Only pending admins can be reviewed." };
-    }
-    admin.auditStatus = "APPROVED";
-    admin.reviewedBy = reviewer;
-    admin.reviewedAt = new Date().toISOString();
-    saveAdminUsers(users);
-    return { ok: true };
-  }
-
-  function rejectAdminAccount(id, reviewer) {
-    var users = loadAdminUsers();
-    var admin = users.find(function (user) { return String(user.id) === String(id); });
-    if (!admin) {
-      return { ok: false, message: "Admin account not found." };
-    }
-    if (admin.auditStatus !== "PENDING") {
-      return { ok: false, message: "Only pending admins can be reviewed." };
-    }
-    admin.auditStatus = "REJECTED";
-    admin.reviewedBy = reviewer;
-    admin.reviewedAt = new Date().toISOString();
-    saveAdminUsers(users);
-    return { ok: true };
   }
 
   function request(path, options) {
@@ -423,16 +303,6 @@
       });
     }
 
-    var logoutBtn = byId("loginLogoutBtn");
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", function () {
-        clearStudentAuth();
-        renderStudentSessionSummary();
-        renderLoginInfo(null);
-        setNotice("loginStatus", "info", "Student signed out.");
-      });
-    }
-
     if (getStudentToken()) {
       redirectTo("profile");
     }
@@ -511,13 +381,25 @@
           setNotice("adminLoginStatus", "warning", "Admin username and password are required.");
           return;
         }
-        var result = loginAdminAccount(username, password);
-        if (!result.ok) {
-          setNotice("adminLoginStatus", "danger", result.message);
-          return;
-        }
-        setNotice("adminLoginStatus", "success", "登录成功，正在进入管理员审核页面...");
-        redirectTo("admin-audit");
+        request("/admin/auth/login", {
+          method: "POST",
+          body: { username: username, password: password }
+        }).then(function (result) {
+          if (!result.ok || !result.payload || !result.payload.success) {
+            var message = result.payload && result.payload.message ? result.payload.message : "登录失败";
+            setNotice("adminLoginStatus", "danger", message);
+            return;
+          }
+          var payload = result.payload;
+          saveAdminSession({
+            id: payload.id,
+            username: payload.username,
+            displayName: payload.displayName,
+            auditStatus: payload.auditStatus
+          });
+          setNotice("adminLoginStatus", "success", "登录成功，正在进入管理员审核页面...");
+          redirectTo("admin-audit");
+        });
       });
     }
 
@@ -527,15 +409,6 @@
         byId("adminLoginUsername").value = "gl1";
         byId("adminLoginPassword").value = "123456";
         setNotice("adminLoginStatus", "info", "Default admin filled.");
-      });
-    }
-
-    var logoutBtn = byId("adminLoginLogoutBtn");
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", function () {
-        clearAdminSession();
-        renderAdminSessionSummary();
-        setNotice("adminLoginStatus", "info", "Admin signed out.");
       });
     }
 
@@ -554,25 +427,42 @@
         event.preventDefault();
         var username = byId("adminRegisterUsername").value.trim();
         var password = byId("adminRegisterPassword").value;
-        var confirm = byId("adminRegisterPasswordConfirm").value;
+        var passwordConfirm = byId("adminRegisterPasswordConfirm").value;
         var displayName = byId("adminRegisterDisplayName").value.trim();
 
         if (!username || !password) {
-          setNotice("adminRegisterStatus", "warning", "Admin username and password are required.");
+          setNotice("adminRegisterStatus", "warning", "请填写管理员账号和密码。");
+          setNotice("adminRegisterFormStatus", "warning", "请填写管理员账号和密码。");
           return;
         }
-        if (password !== confirm) {
-          setNotice("adminRegisterStatus", "warning", "The two passwords do not match.");
+        if (password !== passwordConfirm) {
+          setNotice("adminRegisterStatus", "warning", "两次输入的密码不一致。");
+          setNotice("adminRegisterFormStatus", "warning", "两次输入的密码不一致。");
           return;
         }
 
-        var result = createAdminAccount(username, password, displayName);
-        if (!result.ok) {
-          setNotice("adminRegisterStatus", "danger", result.message);
-          return;
-        }
-        setNotice("adminRegisterStatus", "success", "Admin registration submitted. Waiting for gl1 review.");
-        form.reset();
+        setNotice("adminRegisterStatus", "info", "正在提交注册...");
+        setNotice("adminRegisterFormStatus", "info", "正在提交注册...");
+        request("/admin/auth/register", {
+          method: "POST",
+          body: { username: username, password: password, displayName: displayName }
+        }).then(function (result) {
+          if (!result.ok) {
+            var message = result.payload && result.payload.message
+              ? result.payload.message
+              : (result.status === 0 ? "无法连接服务器，请确认 Tomcat 与数据库已启动。" : "注册失败，请稍后重试。");
+            setNotice("adminRegisterStatus", "danger", message);
+            setNotice("adminRegisterFormStatus", "danger", message);
+            return;
+          }
+          var successMessage = "注册已提交，请等待 gl1 审核通过后再登录。可通过右侧「已有账号？去管理员登录」进入登录页。";
+          setNotice("adminRegisterStatus", "success", successMessage);
+          setNotice("adminRegisterFormStatus", "success", successMessage);
+          form.reset();
+        }).catch(function () {
+          setNotice("adminRegisterStatus", "danger", "注册请求失败，请检查网络或后端服务。");
+          setNotice("adminRegisterFormStatus", "danger", "注册请求失败，请检查网络或后端服务。");
+        });
       });
     }
 
@@ -583,7 +473,8 @@
         byId("adminRegisterPassword").value = "123456";
         byId("adminRegisterPasswordConfirm").value = "123456";
         byId("adminRegisterDisplayName").value = "Admin Two";
-        setNotice("adminRegisterStatus", "info", "Demo admin registration filled.");
+        setNotice("adminRegisterStatus", "info", "已填充示例账号。");
+        setNotice("adminRegisterFormStatus", "info", "已填充示例账号。");
       });
     }
   }
@@ -753,13 +644,19 @@
     if (!confirmAction("确定要" + label + "该管理员注册申请吗？")) {
       return;
     }
-    var result = action === "approve" ? approveAdminAccount(id, session.username) : rejectAdminAccount(id, session.username);
-    if (!result.ok) {
-      setNotice("adminStatus", "danger", result.message);
-      return;
-    }
-    setNotice("adminStatus", "success", "Admin review completed.");
-    loadAdminReviewData();
+    var path = "/admin/audits/admins/" + id + (action === "approve" ? "/approve" : "/reject");
+    request(path, {
+      method: "POST",
+      body: { reviewerUsername: session.username }
+    }).then(function (result) {
+      if (!result.ok) {
+        var message = result.payload && result.payload.message ? result.payload.message : label + " failed.";
+        setNotice("adminStatus", "danger", message);
+        return;
+      }
+      setNotice("adminStatus", "success", "Admin review completed.");
+      loadAdminReviewData();
+    });
   }
 
   function resetProfessionalForm() {
@@ -794,26 +691,30 @@
 
     renderAdminSessionSummary();
 
-    var pendingAdmins = loadAdminUsers().filter(function (user) {
-      return user.auditStatus === "PENDING";
-    });
     var canAuditAdmins = isSuperAdminSession(session);
     if (hint) {
       setNotice("adminAuditHint", canAuditAdmins ? "info" : "warning", canAuditAdmins ? "gl1 can review admin registrations and student registrations." : "This admin is not gl1, so only student registrations can be reviewed.");
     }
 
-    renderTable("pendingAdminUsers", [
-      { label: "ID", key: "id" },
-      { label: "Account", key: "username" },
-      { label: "Display Name", key: "displayName" },
-      { label: "Status", key: "auditStatus" },
-      { label: "Created", key: "createdAt" },
-      { label: "Reviewer", key: "reviewedBy" },
-      { label: "Reviewed At", key: "reviewedAt" },
-      { label: "Actions", key: "actions" }
-    ], renderAdminRows(pendingAdmins, canAuditAdmins), "No pending admin registrations.");
-
-    bindAdminAuditActions(document);
+    request("/admin/audits/admins/pending", { method: "GET" }).then(function (result) {
+      var pendingAdmins = [];
+      if (result.ok && result.payload && result.payload.admins) {
+        pendingAdmins = result.payload.admins;
+      } else if (!result.ok) {
+        setNotice("adminStatus", "danger", "Failed to load pending admin registrations.");
+      }
+      renderTable("pendingAdminUsers", [
+        { label: "ID", key: "id" },
+        { label: "Account", key: "username" },
+        { label: "Display Name", key: "displayName" },
+        { label: "Status", key: "auditStatus" },
+        { label: "Created", key: "createdAt" },
+        { label: "Reviewer", key: "reviewedBy" },
+        { label: "Reviewed At", key: "reviewedAt" },
+        { label: "Actions", key: "actions" }
+      ], renderAdminRows(pendingAdmins, canAuditAdmins), "No pending admin registrations.");
+      bindAdminAuditActions(document);
+    });
   }
 
   function loadAdminStudentData() {

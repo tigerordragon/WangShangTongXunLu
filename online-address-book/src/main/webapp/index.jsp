@@ -42,7 +42,6 @@
           <div class="form-actions">
             <button type="submit">登录</button>
             <button type="button" class="secondary" id="loginDemoBtn">填充示例</button>
-            <button type="button" class="secondary" id="loginLogoutBtn">退出登录</button>
           </div>
         </form>
       </article>

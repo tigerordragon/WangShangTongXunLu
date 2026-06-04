@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.addressbook.mapper.ProfessionalMapper">
+
+    <resultMap id="professionalResultMap" type="com.addressbook.entity.Professional">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="name" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.addressbook.entity.Professional">
+        INSERT INTO professional (id, name) VALUES (#{id}, #{name})
+    </insert>
+
+    <update id="update" parameterType="com.addressbook.entity.Professional">
+        UPDATE professional SET name = #{name} WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="professionalResultMap">
+        SELECT id, name FROM professional WHERE id = #{id}
+    </select>
+
+    <select id="selectByName" resultMap="professionalResultMap">
+        SELECT id, name FROM professional WHERE name = #{name}
+    </select>
+
+    <select id="selectAll" resultMap="professionalResultMap">
+        SELECT id, name FROM professional ORDER BY id
+    </select>
+
+    <delete id="deleteById">
+        DELETE FROM professional WHERE id = #{id}
+    </delete>
+
+    <select id="selectMaxId" resultType="long">
+        SELECT COALESCE(MAX(id), 0) FROM professional
+    </select>
+</mapper>

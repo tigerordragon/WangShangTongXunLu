@@ -28,7 +28,7 @@ public class AdminControllerTest {
 
         mockMvc.perform(post("/admin/students/1/disable"))
                 .andExpect(status().isOk());
-        mockMvc.perform(post("/admin/students/2/enable"))
+        mockMvc.perform(post("/admin/students/4/enable"))
                 .andExpect(status().isOk());
         mockMvc.perform(delete("/admin/students/3"))
                 .andExpect(status().isOk());
@@ -44,10 +44,10 @@ public class AdminControllerTest {
                 .getResponse()
                 .getContentAsString();
 
-        assertTrue(unapproved.contains("\"studentId\":2"));
-        assertTrue(unapproved.contains("\"studentId\":3"));
-        assertFalse(unapproved.contains("\"studentId\":1"));
-        assertFalse(unapproved.contains("\"studentId\":4"));
+        assertTrue(unapproved.contains("\"id\":2"));
+        assertTrue(unapproved.contains("\"id\":3"));
+        assertFalse(unapproved.contains("\"id\":1"));
+        assertFalse(unapproved.contains("\"id\":4"));
     }
 
     @Test

@@ -16,6 +16,10 @@
         <p class="lead">
           新管理员注册后会进入待审核状态，由默认管理员 <strong>gl1</strong> 审核通过后才可以登录。
         </p>
+        <div class="hero-actions">
+          <button type="button" class="secondary" data-go="admin-login">管理员登录</button>
+          <button type="button" class="secondary" data-go="login">学生登录</button>
+        </div>
       </div>
       <div class="session-panel">
         <div class="session-label">管理员会话</div>
@@ -51,6 +55,7 @@
             <button type="submit">提交注册</button>
             <button type="button" class="secondary" id="adminRegisterDemoBtn">填充示例</button>
           </div>
+          <div id="adminRegisterFormStatus" class="notice notice-info">请填写注册信息后提交。</div>
         </form>
       </article>
 
@@ -83,6 +88,9 @@
               </div>
             </div>
           </div>
+        </div>
+        <div class="card-footer">
+          <button type="button" class="secondary" data-go="admin-login">已有账号？去管理员登录</button>
         </div>
       </article>
     </section>

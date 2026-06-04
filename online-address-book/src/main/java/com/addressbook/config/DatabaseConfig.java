@@ -6,22 +6,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.jdbc.core.JdbcTemplate;
-
 import javax.sql.DataSource;
 
-/** 配置 MySQL 数据源与 JdbcTemplate。 */
+/** 配置 MySQL 数据源（供 MyBatis 使用）。 */
 @Configuration
-@PropertySource("classpath:jdbc.properties")
+@PropertySource("classpath:datasource.properties")
 public class DatabaseConfig {
 
     @Bean(destroyMethod = "close")
     public DataSource dataSource(
-            @Value("${jdbc.url}") String url,
-            @Value("${jdbc.username}") String username,
-            @Value("${jdbc.password}") String password,
-            @Value("${jdbc.pool.maximumPoolSize:10}") int maximumPoolSize) {
+            @Value("${datasource.driver}") String driverClassName,
+            @Value("${datasource.url}") String url,
+            @Value("${datasource.username}") String username,
+            @Value("${datasource.password}") String password,
+            @Value("${datasource.pool.maximumPoolSize:10}") int maximumPoolSize) {
+        ensureDriverOnClasspath(driverClassName);
         HikariConfig config = new HikariConfig();
+        config.setDriverClassName(driverClassName);
         config.setJdbcUrl(url);
         config.setUsername(username);
         config.setPassword(password);
@@ -30,8 +31,15 @@ public class DatabaseConfig {
         return new HikariDataSource(config);
     }
 
-    @Bean
-    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
-        return new JdbcTemplate(dataSource);
+    /** 启动时校验 MySQL 驱动是否在 WEB-INF/lib 中，避免 Hikari 报 Failed to get driver instance。 */
+    private void ensureDriverOnClasspath(String driverClassName) {
+        try {
+            Class.forName(driverClassName);
+        } catch (ClassNotFoundException ex) {
+            throw new IllegalStateException(
+                    "未找到 MySQL 驱动 " + driverClassName
+                            + "。请用 mvn package 生成 WAR 部署，或确认 IDEA Artifact 的 WEB-INF/lib 包含 mysql-connector-j。",
+                    ex);
+        }
     }
 }

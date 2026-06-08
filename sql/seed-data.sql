@@ -1,7 +1,9 @@
 -- =============================================================================
 -- 网上通讯录 - 测试数据重灌脚本（需已执行 schema.sql 建表）
--- 用法: mysql -u root -p online_address_book < sql/seed-data.sql
+-- 用法: mysql --default-character-set=utf8mb4 -u root -p online_address_book < sql/seed-data.sql
 -- =============================================================================
+
+SET NAMES utf8mb4;
 
 USE online_address_book;
 

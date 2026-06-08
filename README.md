@@ -19,14 +19,53 @@
 
 ## 如何运行项目
 
-### 1. 克隆项目到本地
+### 方法1. 使用 Docker 启动项目
+安装 `Docker Desktop` 后，在项目根目录执行：
+
 ```bash
-git clone https://github.com/tigerordragon/WangShangTongXunLu.git
-cd WangShangTongXunLu
+docker compose up --build -d
 ```
 
-### 2. 打包项目
-项目目录中的 Web 应用在 `online-address-book` 下，先进入该目录并打包：
+启动完成后浏览器访问：
+
+```text
+http://localhost:18081/online-address-book/
+```
+
+`Docker Compose` 会同时启动 `MySQL 8.0` 和 `Tomcat 9` 应用，并在首次创建数据库容器时执行：
+
+```text
+sql/schema.sql
+sql/seed-data.sql
+```
+
+查看运行状态：
+
+```bash
+docker compose ps
+```
+
+查看应用日志：
+
+```bash
+docker compose logs -f app
+```
+
+停止服务：
+
+```bash
+docker compose down
+```
+
+如果需要清空数据库并重新导入初始化数据：
+
+```bash
+docker compose down --volumes
+docker compose up --build -d
+```
+
+### 方法2. 手动打包项目
+使用本机 `Tomcat` 部署时，项目目录中的 Web 应用在 `online-address-book` 下，先进入该目录并打包：
 
 ```bash
 cd online-address-book

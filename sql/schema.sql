@@ -4,6 +4,8 @@
 -- 当前后端为内存仓储，本脚本用于迁移到 MySQL 持久化
 -- =============================================================================
 
+SET NAMES utf8mb4;
+
 -- 1. 创建数据库
 CREATE DATABASE IF NOT EXISTS online_address_book
   DEFAULT CHARACTER SET utf8mb4
